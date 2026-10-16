@@ -24,7 +24,6 @@ import {
   Lam,
   Let,
   Proj,
-  BVar,
   exprEq,
   mkAppN,
   getAppFn,
@@ -36,10 +35,11 @@ import {
   instantiateLevelParams,
   consumeTypeAnnotations,
 } from "./expr.ts";
-import { Environment, KernelError, checkDuplicatedUnivParams, type Decl, type RecRule } from "./env.ts";
+import { KernelError } from "./error.ts";
+import { Environment, checkDuplicatedUnivParams, type Decl, type RecRule} from "./env.ts";
 import { TypeChecker, LocalCtx } from "./tc.ts";
 
-export interface Constructor {
+interface Constructor {
   name: Name;
   type: Expr;
 }
@@ -59,7 +59,7 @@ export interface InductiveDecl {
 
 const nestedPrefix = Name.simple("_nested");
 
-export function mkRecName(I: Name): Name {
+function mkRecName(I: Name): Name {
   return I.str("rec");
 }
 
@@ -161,7 +161,7 @@ function checkNoNestedAux(n: Name, e: Expr): void {
         (t.kind === ExprKind.Proj && nestedPrefix.isPrefixOf(t.structName)),
     )
   ) {
-    throw new KernelError(`invalid declaration '${n}', it uses the reserved prefix '${nestedPrefix}'`);
+    throw new KernelError("universe", `invalid declaration '${n}', it uses the reserved prefix '${nestedPrefix}'`);
   }
 }
 
@@ -183,8 +183,7 @@ function checkUniformIndOccs(d: InductiveDecl): void {
           ok = a.kind === ExprKind.BVar && a.idx === offset - 1 - i;
         }
         if (!ok)
-          throw new KernelError(
-            `invalid occurrence of datatype '${fn.name}' being declared: it must be applied to the parameters and universe levels of the mutual declaration`,
+          throw new KernelError("universe", `invalid occurrence of datatype '${fn.name}' being declared: it must be applied to the parameters and universe levels of the mutual declaration`,
           );
         return false;
       });
@@ -280,7 +279,7 @@ class AddInductiveFn {
             type = instantiate1(type.body, param);
           } else {
             if (!this.isDefEq(type.type, this.getParamType(i)))
-              throw new KernelError("parameters of all inductive datatypes must match");
+              throw new KernelError("inductive", "parameters of all inductive datatypes must match");
             type = instantiate1(type.body, this.params[i]!);
           }
           i++;
@@ -292,7 +291,7 @@ class AddInductiveFn {
         type = this.whnf(type);
       }
       if (i !== this.nparams)
-        throw new KernelError("number of parameters mismatch in inductive datatype declaration");
+        throw new KernelError("inductive", "number of parameters mismatch in inductive datatype declaration");
 
       const sort = this.tc().ensureSort(type, type);
 
@@ -300,7 +299,7 @@ class AddInductiveFn {
         this.resultLevel = sort.level;
         this.isNotZeroFlag = isNotZero(this.resultLevel);
       } else if (!isEquivalent(sort.level, this.resultLevel)) {
-        throw new KernelError("mutually inductive types must live in the same universe");
+        throw new KernelError("universe", "mutually inductive types must live in the same universe");
       }
 
       this.indCnsts.push(new Const(indType.name, this.levels));
@@ -315,7 +314,7 @@ class AddInductiveFn {
         while (t.kind === ExprKind.Pi) {
           const domain = t.type;
           if (
-            findExpr(domain, (e) => e.kind === ExprKind.Const && this.indCnsts.some((c) => c.name === (e as Const).name))
+            findExpr(domain, (e) => e.kind === ExprKind.Const && this.indCnsts.some((c) => c.name === (e).name))
           ) {
             return true;
           }
@@ -327,7 +326,7 @@ class AddInductiveFn {
   }
 
   private hasIndOcc(t: Expr): boolean {
-    return findExpr(t, (e) => e.kind === ExprKind.Const && this.indCnsts.some((c) => c.name === (e as Const).name));
+    return findExpr(t, (e) => e.kind === ExprKind.Const && this.indCnsts.some((c) => c.name === (e).name));
   }
 
   private isReflexive(): boolean {
@@ -406,16 +405,14 @@ class AddInductiveFn {
       // nonrecursive argument
     } else if (t.kind === ExprKind.Pi) {
       if (this.hasIndOcc(t.type))
-        throw new KernelError(
-          `arg #${argIdx + 1} of '${cnstrName}' has a non positive occurrence of the datatypes being declared`,
+        throw new KernelError("inductive", `arg #${argIdx + 1} of '${cnstrName}' has a non positive occurrence of the datatypes being declared`,
         );
       const local = this.mkLocalDeclFor(t);
       this.checkPositivity(instantiate1(t.body, local), cnstrName, argIdx);
     } else if (this.isValidIndApp(t) !== null) {
       // recursive argument
     } else {
-      throw new KernelError(
-        `arg #${argIdx + 1} of '${cnstrName}' contains a non valid occurrence of the datatypes being declared`,
+      throw new KernelError("inductive", `arg #${argIdx + 1} of '${cnstrName}' contains a non valid occurrence of the datatypes being declared`,
       );
     }
   }
@@ -426,7 +423,7 @@ class AddInductiveFn {
       const found = new Set<number>();
       for (const cnstr of indType.ctors) {
         const n = cnstr.name;
-        if (found.has(n.id)) throw new KernelError(`duplicate constructor name '${n}'`);
+        if (found.has(n.id)) throw new KernelError("inductive", `duplicate constructor name '${n}'`);
         found.add(n.id);
         let t = cnstr.type;
         this.env.checkName(n);
@@ -435,13 +432,12 @@ class AddInductiveFn {
         while (t.kind === ExprKind.Pi) {
           if (i < this.nparams) {
             if (!this.isDefEq(t.type, this.getParamType(i)))
-              throw new KernelError(`arg #${i + 1} of '${n}' does not match inductive datatypes parameters'`);
+              throw new KernelError("inductive", `arg #${i + 1} of '${n}' does not match inductive datatypes parameters'`);
             t = instantiate1(t.body, this.params[i]!);
           } else {
             const s = this.tc().ensureType(t.type);
             if (!(isGeq(this.resultLevel, s.level) || normalizesToZero(this.resultLevel))) {
-              throw new KernelError(
-                `universe level of type_of(arg #${i + 1}) of '${n}' is too big for the corresponding inductive datatype`,
+              throw new KernelError("universe", `universe level of type_of(arg #${i + 1}) of '${n}' is too big for the corresponding inductive datatype`,
               );
             }
             if (!this.isUnsafe) this.checkPositivity(t.type, n, i);
@@ -450,14 +446,13 @@ class AddInductiveFn {
           }
           i++;
         }
-        if (!this.isValidIndAppIdx(t, idx)) throw new KernelError(`invalid return type for '${n}'`);
+        if (!this.isValidIndAppIdx(t, idx)) throw new KernelError("inductive", `invalid return type for '${n}'`);
       }
     }
   }
 
   private declareConstructors(): void {
-    for (let idx = 0; idx < this.indTypes.length; idx++) {
-      const indType = this.indTypes[idx]!;
+    for (const indType of this.indTypes) {
       let cidx = 0;
       for (const cnstr of indType.ctors) {
         let arity = 0;
@@ -546,7 +541,7 @@ class AddInductiveFn {
 
   private getIIndices(t: Expr, indices: Expr[]): number {
     const r = this.isValidIndApp(t);
-    if (r === null) throw new KernelError("ill-formed inductive datatype");
+    if (r === null) throw new KernelError("inductive", "ill-formed inductive datatype");
     const [, allArgs] = getAppArgs(t);
     for (let i = this.nparams; i < allArgs.length; i++) indices.push(allArgs[i]!);
     return r;
@@ -603,8 +598,7 @@ class AddInductiveFn {
         let CApp = mkAppN(this.recInfos[itIdx]!.C, itIndices);
         const introApp = mkAppN(mkAppN(new Const(cnstr.name, this.levels), this.params), bU);
         CApp = new App(CApp, introApp);
-        for (let j = 0; j < u.length; j++) {
-          const uJ = u[j]!;
+        for (const uJ of u) {
           let uJTy = this.whnf(this.inferType(uJ));
           const xs: FVar[] = [];
           while (uJTy.kind === ExprKind.Pi) {
@@ -672,8 +666,7 @@ class AddInductiveFn {
         i++;
       }
       const v: Expr[] = [];
-      for (let j = 0; j < u.length; j++) {
-        const uJ = u[j]!;
+      for (const uJ of u) {
         let uJTy = this.whnf(this.inferType(uJ));
         const xs: FVar[] = [];
         while (uJTy.kind === ExprKind.Pi) {
@@ -741,12 +734,12 @@ class AddInductiveFn {
   private checkRecursors(): void {
     const Cs = this.collectCs();
     const minors = this.collectMinors();
-    for (let dIdx = 0; dIdx < this.indTypes.length; dIdx++) {
-      const recName = mkRecName(this.indTypes[dIdx]!.name);
+    for (const indType of this.indTypes) {
+      const recName = mkRecName(indType.name);
       const recCi = this.env.get(recName);
       this.tc().check(recCi.cv.type, this.getRecLparams());
       const recPre = mkAppN(mkAppN(mkAppN(new Const(recName, this.getRecLevels()), this.params), Cs), minors);
-      for (const cnstr of this.indTypes[dIdx]!.ctors) {
+      for (const cnstr of indType.ctors) {
         const bU: FVar[] = [];
         let t = cnstr.type;
         let i = 0;
@@ -769,8 +762,7 @@ class AddInductiveFn {
         const reduct = tcheck.whnf(lhs);
         const actual = tcheck.inferType(reduct);
         if (!tcheck.isDefEq(actual, expected))
-          throw new KernelError(
-            `generated recursor computation rule for '${cnstr.name}' is not type-preserving`,
+          throw new KernelError("recursor", `generated recursor computation rule for '${cnstr.name}' is not type-preserving`,
           );
       }
     }
@@ -806,7 +798,7 @@ class ElimNestedFn {
   private d: InductiveDecl;
   private paramsLctx = new LocalCtx();
   private params: FVar[] = [];
-  private nestedAux: Array<{ nested: Expr; auxName: Name }> = [];
+  private nestedAux: { nested: Expr; auxName: Name }[] = [];
   private lvls: Level[];
   private newTypes: InductiveType[] = [];
   private nextIdx = 1;
@@ -826,7 +818,7 @@ class ElimNestedFn {
   }
 
   private illFormed(): never {
-    throw new KernelError("invalid nested inductive datatype, ill-formed declaration");
+    throw new KernelError("inductive", "invalid nested inductive datatype, ill-formed declaration");
   }
 
   private replaceParams(e: Expr, As: FVar[]): Expr {
@@ -838,7 +830,7 @@ class ElimNestedFn {
     const fn = getAppFn(e);
     if (fn.kind !== ExprKind.Const) return null;
     const info = this.env.find(fn.name);
-    if (info === undefined || info.kind !== "induct") return null;
+    if (info?.kind !== "induct") return null;
     const [, args] = getAppArgs(e);
     const nparams = info.numParams;
     if (nparams > args.length) return null;
@@ -847,13 +839,12 @@ class ElimNestedFn {
     for (let i = 0; i < nparams; i++) {
       const a = args[i]!;
       if (hasLooseBVars(a)) looseBVars = true;
-      if (findExpr(a, (t) => t.kind === ExprKind.Const && this.newTypes.some((nt) => nt.name === (t as Const).name)))
+      if (findExpr(a, (t) => t.kind === ExprKind.Const && this.newTypes.some((nt) => nt.name === (t).name)))
         isNested = true;
     }
     if (!isNested) return null;
     if (looseBVars)
-      throw new KernelError(
-        `invalid nested inductive datatype '${fn.name}', nested inductive datatypes parameters cannot contain local variables.`,
+      throw new KernelError("inductive", `invalid nested inductive datatype '${fn.name}', nested inductive datatypes parameters cannot contain local variables.`,
       );
     return info;
   }
@@ -935,7 +926,7 @@ class ElimNestedFn {
     let cur = type;
     for (let i = 0; i < nparams; i++) {
       if (cur.kind !== ExprKind.Pi)
-        throw new KernelError("invalid inductive datatype declaration, incorrect number of parameters");
+        throw new KernelError("inductive", "invalid inductive datatype declaration, incorrect number of parameters");
       params.push(lctx.mkLocalDecl(cur.binderName, cur.type, cur.binderInfo));
       cur = instantiate1(cur.body, params[params.length - 1]!);
     }
@@ -946,8 +937,7 @@ class ElimNestedFn {
     const dNparams = this.d.nparams;
     this.newTypes = [...this.d.types];
     if (this.newTypes.length === 0)
-      throw new KernelError(
-        "invalid empty (mutual) inductive datatype declaration, it must contain at least one inductive type.",
+      throw new KernelError("inductive", "invalid empty (mutual) inductive datatype declaration, it must contain at least one inductive type.",
       );
     this.getParams(this.newTypes[0]!.type, dNparams, this.paramsLctx, this.params);
     let qhead = 0;
@@ -1005,7 +995,7 @@ class RestoreCtx {
 
   getNestedIfAuxConstructor(c: Name): { nested: Expr; auxIName: Name } | null {
     const info = this.auxEnv.find(c);
-    if (info === undefined || info.kind !== "ctor") return null;
+    if (info?.kind !== "ctor") return null;
     const auxIName = info.induct;
     const nested = this.res.aux2nested.get(auxIName.id);
     if (nested === undefined) return null;
@@ -1015,16 +1005,14 @@ class RestoreCtx {
   restoreConstructorName(cnstrName: Name): Name {
     const p = this.getNestedIfAuxConstructor(cnstrName);
     if (p === null)
-      throw new KernelError(
-        `failed to restore nested inductive types, '${cnstrName}' is not a constructor of an auxiliary type`,
+      throw new KernelError("inductive", `failed to restore nested inductive types, '${cnstrName}' is not a constructor of an auxiliary type`,
       );
     const I = getAppFn(p.nested);
     if (I.kind !== ExprKind.Const)
-      throw new KernelError(
-        "failed to restore nested inductive types, nested occurrence is not an inductive type application",
+      throw new KernelError("inductive", "failed to restore nested inductive types, nested occurrence is not an inductive type application",
       );
     const r = cnstrName.replacePrefix(p.auxIName, I.name);
-    if (r === null) throw new KernelError("failed to restore nested inductive constructor name");
+    if (r === null) throw new KernelError("inductive", "failed to restore nested inductive constructor name");
     return r;
   }
 
@@ -1034,9 +1022,9 @@ class RestoreCtx {
     const As: FVar[] = [];
     let e = e0;
     const pi = e.kind === ExprKind.Pi;
-    for (let i = 0; i < res.params.length; i++) {
+    for (const _param of res.params) {
       if (e.kind !== ExprKind.Pi && e.kind !== ExprKind.Lam)
-        throw new KernelError("failed to restore nested inductive types, fewer binders than parameters");
+        throw new KernelError("inductive", "failed to restore nested inductive types, fewer binders than parameters");
       As.push(lctx.mkLocalDecl(e.binderName, e.type, e.binderInfo));
       e = instantiate1(e.body, As[As.length - 1]!);
     }
@@ -1051,8 +1039,7 @@ class RestoreCtx {
         if (nested !== undefined) {
           const [, args] = getAppArgs(t);
           if (args.length < res.params.length)
-            throw new KernelError(
-              "failed to restore nested inductive types, auxiliary type is not applied to all parameters",
+            throw new KernelError("inductive", "failed to restore nested inductive types, auxiliary type is not applied to all parameters",
             );
           const newT = instantiateRev(abstractFVars(nested, res.params), As);
           return mkAppN(newT, args.slice(res.params.length));
@@ -1061,17 +1048,15 @@ class RestoreCtx {
         if (r !== null) {
           const [, args] = getAppArgs(t);
           if (args.length < res.params.length)
-            throw new KernelError(
-              "failed to restore nested inductive types, auxiliary constructor is not applied to all parameters",
+            throw new KernelError("inductive", "failed to restore nested inductive types, auxiliary constructor is not applied to all parameters",
             );
           const newNested = instantiateRev(abstractFVars(r.nested, res.params), As);
           const [I, IArgs] = getAppArgs(newNested);
           if (I.kind !== ExprKind.Const)
-            throw new KernelError(
-              "failed to restore nested inductive types, nested occurrence is not an inductive type application",
+            throw new KernelError("inductive", "failed to restore nested inductive types, nested occurrence is not an inductive type application",
             );
           const newFnName = fn.name.replacePrefix(r.auxIName, I.name);
-          if (newFnName === null) throw new KernelError("failed to restore nested constructor name");
+          if (newFnName === null) throw new KernelError("inductive", "failed to restore nested constructor name");
           const newFn = new Const(newFnName, I.levels);
           return mkAppN(mkAppN(newFn, IArgs), args.slice(res.params.length));
         }
@@ -1093,7 +1078,7 @@ function mkAuxRecNameMap(
   const ntypes = d.types.length;
   const mainName = d.types[0]!.name;
   const mainInfo = auxEnv.get(mainName);
-  if (mainInfo.kind !== "induct") throw new KernelError("unreachable in mkAuxRecNameMap");
+  if (mainInfo.kind !== "induct") throw new KernelError("unreachable", "unreachable in mkAuxRecNameMap");
   const allNames = mainInfo.all;
   const auxRecNames: Name[] = [];
   const recMap = new Map<number, Name>();
@@ -1144,7 +1129,7 @@ export function addInductive(env: Environment, d: InductiveDecl): void {
     const mapped = recMap.get(recName.id);
     if (mapped !== undefined) newRecName = mapped;
     const recInfo = auxEnv.get(recName);
-    if (recInfo.kind !== "rec") throw new KernelError("unreachable: expected recursor");
+    if (recInfo.kind !== "rec") throw new KernelError("unreachable", "unreachable: expected recursor");
     const newRecType = restore.restoreNested(recInfo.cv.type, recMap);
     const newRules: RecRule[] = [];
     for (const rule of recInfo.rules) {
@@ -1173,12 +1158,12 @@ export function addInductive(env: Environment, d: InductiveDecl): void {
 
   for (const indType of d.types) {
     const indInfo = auxEnv.get(indType.name);
-    if (indInfo.kind !== "induct") throw new KernelError("unreachable: expected inductive");
+    if (indInfo.kind !== "induct") throw new KernelError("unreachable", "unreachable: expected inductive");
     env.checkName(indInfo.cv.name);
     env.addCore({ ...indInfo, all: allIndNames });
     for (const cnstrName of indInfo.ctors) {
       const cnstrInfo = auxEnv.get(cnstrName);
-      if (cnstrInfo.kind !== "ctor") throw new KernelError("unreachable: expected constructor");
+      if (cnstrInfo.kind !== "ctor") throw new KernelError("unreachable", "unreachable: expected constructor");
       const newType = restore.restoreNested(cnstrInfo.cv.type);
       env.checkName(cnstrInfo.cv.name);
       env.addCore({ ...cnstrInfo, cv: { ...cnstrInfo.cv, type: newType } });

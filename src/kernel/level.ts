@@ -3,6 +3,7 @@
  * The equality test is normalize-then-compare, as in the real kernel.
  */
 import { Name } from "./name.ts";
+import { KernelError } from "./error.ts";
 
 export const LevelKind = {
   Zero: 0,
@@ -73,18 +74,18 @@ export function mkSuccN(l: Level, k: number): Level {
   return l;
 }
 
-export function isZero(l: Level): boolean {
+function isZero(l: Level): boolean {
   return l.kind === LevelKind.Zero;
 }
 
 /** succ^k of zero */
-export function isExplicit(l: Level): boolean {
+function isExplicit(l: Level): boolean {
   while (l.kind === LevelKind.Succ) l = l.a!;
   return l.kind === LevelKind.Zero;
 }
 
 /** Convert succ^k(l) into [l, k]. */
-export function toOffset(l: Level): [Level, number] {
+function toOffset(l: Level): [Level, number] {
   let k = 0;
   while (l.kind === LevelKind.Succ) {
     l = l.a!;
@@ -115,12 +116,12 @@ export function levelListEq(a: Level[], b: Level[]): boolean {
   return true;
 }
 
-export function isOne(l: Level): boolean {
+function isOne(l: Level): boolean {
   return levelEq(l, levelOne);
 }
 
 /** Smart constructor with the simplifications from level.cpp mk_max. */
-export function mkMax(l1: Level, l2: Level): Level {
+function mkMax(l1: Level, l2: Level): Level {
   if (isExplicit(l1) && isExplicit(l2)) {
     return l1.depth >= l2.depth ? l1 : l2;
   } else if (levelEq(l1, l2)) {
@@ -195,7 +196,7 @@ function isNormLt(a: Level, b: Level): boolean {
         if (!levelEq(l1.a!, l2.a!)) return isNormLt(l1.a!, l2.a!);
         return isNormLt(l1.b!, l2.b!);
       default:
-        throw new Error("unreachable in isNormLt");
+        throw new KernelError("unreachable", "unreachable in isNormLt");
     }
   }
   return k1 < k2;
@@ -216,7 +217,7 @@ function mkMaxList(args: Level[]): Level {
   return r;
 }
 
-export function normalize(l: Level): Level {
+function normalize(l: Level): Level {
   const [r, k] = toOffset(l);
   switch (r.kind) {
     case LevelKind.Zero:
@@ -264,7 +265,7 @@ export function normalize(l: Level): Level {
       return mkMaxList(rargs);
     }
     default:
-      throw new Error("unreachable in normalize");
+      throw new KernelError("unreachable", "unreachable in normalize");
   }
 }
 
@@ -323,21 +324,5 @@ export function getUndefParam(l: Level, ps: Name[]): Name | null {
     case LevelKind.Max:
     case LevelKind.IMax:
       return getUndefParam(l.a!, ps) ?? getUndefParam(l.b!, ps);
-  }
-}
-
-export function levelToString(l: Level): string {
-  if (isExplicit(l)) return toOffset(l)[1].toString();
-  switch (l.kind) {
-    case LevelKind.Zero:
-      return "0";
-    case LevelKind.Param:
-      return l.name!.toString();
-    case LevelKind.Succ:
-      return `(${levelToString(l.a!)})+1`;
-    case LevelKind.Max:
-      return `max ${levelToString(l.a!)} ${levelToString(l.b!)}`;
-    case LevelKind.IMax:
-      return `imax ${levelToString(l.a!)} ${levelToString(l.b!)}`;
   }
 }

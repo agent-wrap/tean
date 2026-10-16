@@ -10,8 +10,9 @@ jobs:
         with:
           node-version: "26"
       - run: bun install
-      - run: bun check
-      - run: bun test
+      # typecheck, lint (zero warnings), tests, type-coverage ratchet,
+      # dead-code check, suppression policy
+      - run: bun run verify
       - name: fetch arena test suite
         run: |
           mkdir -p vendor

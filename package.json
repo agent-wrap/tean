@@ -5,11 +5,22 @@
   "type": "module",
   "scripts": {
     "check": "tsc --noEmit",
+    "lint": "eslint --max-warnings 0 src tests scripts eslint.config.ts",
     "test": "bun test",
-    "arena": "bun run scripts/arena.ts"
+    "arena": "bun run scripts/arena.ts",
+    "check:types-coverage": "type-coverage --strict --at-least 98.5",
+    "check:dead-code": "knip",
+    "check:suppressions": "./scripts/check-suppressions.sh",
+    "verify": "bun check && bun run lint && bun test && bun run check:types-coverage && bun run check:dead-code && bun run check:suppressions"
   },
   "devDependencies": {
+    "@stryker-mutator/core": "^10.0.0",
     "@types/bun": "latest",
-    "typescript": "^5.9.0"
+    "eslint": "^10.12.0",
+    "jiti": "^2.7.0",
+    "knip": "^6.41.0",
+    "type-coverage": "^2.30.4",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.71.2"
   }
 }

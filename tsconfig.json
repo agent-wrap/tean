@@ -1,20 +1,50 @@
 {
+  // Flag list taken from `tsc --all` (TypeScript 5.9), not from a preset.
+  // Each flag carries the defect class it defends against.
+  // See docs/NOTEBOOK.md 2026-10-15 for the defect-coverage table.
   "compilerOptions": {
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2023"],
-    "types": ["bun-types"],
+    "types": ["bun"],
+
+    // --- the `strict` umbrella, expanded so a TS upgrade cannot move it ---
     "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true, // an untyped value entering the kernel
+    "strictNullChecks": true, // undefined from Map.get or array index
+    "strictFunctionTypes": true, // contravariant callback misuse
+    "strictBindCallApply": true, // wrong arity through bind/call
+    "strictPropertyInitialization": true, // a cache field used before set
+    "noImplicitThis": true, // detached method losing its receiver
+    "useUnknownInCatchVariables": true, // catch clauses must narrow errors
+    "strictBuiltinIteratorReturn": true, // iterator result misuse
+
+    // --- beyond the umbrella ---
+    "noUncheckedIndexedAccess": true, // args[i] may be absent; the kernel indexes constantly
+    "exactOptionalPropertyTypes": true, // `value?: Expr` must not hold undefined explicitly
+    "noImplicitOverride": true, // a renamed base member orphans a subclass member
+    "noFallthroughCasesInSwitch": true, // ExprKind dispatch must not fall through
+    "noImplicitReturns": true, // a code path that forgets to return an Expr
+    "noUnusedLocals": true, // dead bindings hide half-done refactors
+    "noUnusedParameters": true, // same, for signatures
+    "noPropertyAccessFromIndexSignature": true, // raw JSON access must say o["key"]
+    "allowUnreachableCode": false, // dead code after a throw is a logic smell
+    "allowUnusedLabels": false, // a mistyped label silently changes control flow
+    "forceConsistentCasingInFileNames": true, // macOS is case-insensitive; CI is not
+    "noUncheckedSideEffectImports": true, // a typo'd import must not vanish silently
+
+    // --- dual-engine constraint: Bun runs tests, Node runs the checker ---
+    "erasableSyntaxOnly": true, // Node type-stripping cannot transform enums or param properties
+    "isolatedModules": true, // every file must strip independently
+    "verbatimModuleSyntax": true, // type imports must say `import type`
+    "allowImportingTsExtensions": true, // Node ESM needs explicit .ts specifiers
+
+    // Rejected, with reasons (see notebook): emit flags (noEmit build),
+    // isolatedDeclarations (no declaration emit), allowJs (no JS sources),
+    // noErrorTruncation (verbosity, not safety).
     "noEmit": true,
-    "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true,
-    "skipLibCheck": true,
-    "verbatimModuleSyntax": true
+    "skipLibCheck": true
   },
-  "include": ["src", "tests", "scripts"]
+  "include": ["src", "tests", "scripts", "eslint.config.ts"]
 }

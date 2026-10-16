@@ -6,7 +6,8 @@
 import { Name } from "./name.ts";
 import { Level } from "./level.ts";
 import { type Expr, Sort, Const, App, Pi, mkAppN, exprEq } from "./expr.ts";
-import { Environment, KernelError, type Decl } from "./env.ts";
+import { KernelError } from "./error.ts";
+import { Environment, type Decl} from "./env.ts";
 import { LocalCtx } from "./tc.ts";
 import { quotName, quotMkName, quotLiftName, quotIndName } from "./tc.ts";
 
@@ -18,19 +19,19 @@ function mkArrow(a: Expr, b: Expr): Expr {
 
 function checkEqType(env: Environment): void {
   const eqInfo = env.find(eqName);
-  if (eqInfo === undefined || eqInfo.kind !== "induct")
-    throw new KernelError("failed to initialize quot module, environment does not have 'Eq' type");
+  if (eqInfo?.kind !== "induct")
+    throw new KernelError("universe", "failed to initialize quot module, environment does not have 'Eq' type");
   if (eqInfo.cv.lparams.length !== 1)
-    throw new KernelError("failed to initialize quot module, unexpected number of universe params at 'Eq' type");
+    throw new KernelError("universe", "failed to initialize quot module, unexpected number of universe params at 'Eq' type");
   if (eqInfo.ctors.length !== 1)
-    throw new KernelError("failed to initialize quot module, unexpected number of constructors for 'Eq' type");
+    throw new KernelError("quot", "failed to initialize quot module, unexpected number of constructors for 'Eq' type");
   const lctx = new LocalCtx();
   {
     const u = Level.param(eqInfo.cv.lparams[0]!);
     const alpha = lctx.mkLocalDecl(Name.simple("α"), new Sort(u), "implicit");
     const expectedEqType = lctx.mkPi([alpha], mkArrow(alpha, mkArrow(alpha, new Sort(Level.zero))));
     if (!exprEq(expectedEqType, eqInfo.cv.type))
-      throw new KernelError("failed to initialize quot module, 'Eq' has an unexpected type");
+      throw new KernelError("quot", "failed to initialize quot module, 'Eq' has an unexpected type");
   }
   {
     const eqReflInfo = env.get(eqInfo.ctors[0]!);
@@ -39,7 +40,7 @@ function checkEqType(env: Environment): void {
     const a = lctx.mkLocalDecl(Name.simple("a"), alpha);
     const expectedReflType = lctx.mkPi([alpha, a], mkAppN(new Const(eqName, [u]), [alpha, a, a]));
     if (!exprEq(eqReflInfo.cv.type, expectedReflType))
-      throw new KernelError("failed to initialize quot module, unexpected type for 'Eq' type constructor");
+      throw new KernelError("quot", "failed to initialize quot module, unexpected type for 'Eq' type constructor");
   }
 }
 
@@ -122,10 +123,10 @@ export function addQuot(env: Environment): void {
 /** Validate one exported quot declaration against the canonical one. */
 export function checkExportedQuot(env: Environment, exported: Extract<Decl, { kind: "quot" }>): void {
   const installed = env.find(exported.cv.name);
-  if (installed === undefined || installed.kind !== "quot")
-    throw new KernelError(`exported quotient declaration '${exported.cv.name}' is not a quotient primitive`);
+  if (installed?.kind !== "quot")
+    throw new KernelError("quot", `exported quotient declaration '${exported.cv.name}' is not a quotient primitive`);
   if (installed.quotKind !== exported.quotKind)
-    throw new KernelError(`exported quotient declaration '${exported.cv.name}' has the wrong kind`);
+    throw new KernelError("quot", `exported quotient declaration '${exported.cv.name}' has the wrong kind`);
   if (
     installed.cv.lparams.length !== exported.cv.lparams.length ||
     !exprEq(
@@ -134,7 +135,7 @@ export function checkExportedQuot(env: Environment, exported: Extract<Decl, { ki
       renameLevelParams(exported.cv.type, exported.cv.lparams, installed.cv.lparams),
     )
   )
-    throw new KernelError(`exported quotient declaration '${exported.cv.name}' has the wrong type`);
+    throw new KernelError("quot", `exported quotient declaration '${exported.cv.name}' has the wrong type`);
 }
 
 import { instantiateLevelParams } from "./expr.ts";

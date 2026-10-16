@@ -5,15 +5,12 @@
  *
  * Exit code 0: every declaration checked. Nonzero: a declaration failed.
  */
-import { ExportParser, ParseError } from "./export/parser.ts";
-import { KernelError } from "./kernel/env.ts";
-import { Checker } from "./checker.ts";
+import { ExportParser } from "./export/parser.ts";
+import { Checker, tryStep, type CheckFailure } from "./checker.ts";
 
 interface Failure {
   decl: string;
-  error: string;
-  /** true: the kernel refused the proof. false: the checker itself broke. */
-  refusal: boolean;
+  failure: CheckFailure;
 }
 
 export interface CheckResult {
@@ -34,29 +31,19 @@ export async function checkFile(path: string, keepGoing: boolean): Promise<Check
   let lineNo = 0;
   for (const line of text.split("\n")) {
     lineNo++;
-    let decl;
-    try {
-      decl = parser.processLine(line);
-    } catch (err) {
-      failures.push({
-        decl: `<line ${lineNo}>`,
-        error: err instanceof Error ? err.message : String(err),
-        refusal: err instanceof ParseError,
-      });
+    const parsed = tryStep(() => parser.processLine(line));
+    if (!parsed.ok) {
+      failures.push({ decl: `<line ${lineNo}>`, failure: parsed.error });
       if (!keepGoing) break;
       continue;
     }
+    const decl = parsed.value;
     if (decl === null) continue;
     const declName =
       decl.kind === "inductive" ? decl.types.map((t) => t.name.toString()).join(",") : decl.name.toString();
-    try {
-      checker.addDecl(decl);
-    } catch (err) {
-      failures.push({
-        decl: declName,
-        error: err instanceof Error ? err.message : String(err),
-        refusal: err instanceof KernelError || err instanceof ParseError,
-      });
+    const checked = tryStep(() => { checker.addDecl(decl); });
+    if (!checked.ok) {
+      failures.push({ decl: declName, failure: checked.error });
       if (!keepGoing) break;
     }
   }
@@ -68,29 +55,26 @@ async function main(): Promise<void> {
   const keepGoing = args.includes("--keep-going");
   const quiet = args.includes("--quiet");
   const files = args.filter((a) => !a.startsWith("--"));
-  if (files.length !== 1) {
+  const file = files[0];
+  if (files.length !== 1 || file === undefined) {
     console.error("usage: bun run src/main.ts <file.ndjson> [--keep-going] [--quiet]");
     process.exit(2);
   }
-  const result = await checkFile(files[0]!, keepGoing);
+  const result = await checkFile(file, keepGoing);
   if (!quiet) {
     console.log(`checked ${result.declsChecked} declarations in ${result.elapsedMs.toFixed(0)} ms`);
   }
   if (result.failures.length > 0) {
     for (const f of result.failures) {
-      console.error(`FAIL ${f.decl}: ${f.error}`);
+      const tag = f.failure.kind === "refusal" ? f.failure.code : "BUG";
+      console.error(`FAIL [${tag}] ${f.decl}: ${f.failure.message}`);
     }
     // Arena convention: 1 = proof rejected, >2 = a bug in the checker.
-    process.exit(result.failures.every((f) => f.refusal) ? 1 : 3);
+    process.exit(result.failures.every((f) => f.failure.kind === "refusal") ? 1 : 3);
   }
 }
 
-const isDirectRun = (): boolean => {
-  if (typeof Bun !== "undefined") return import.meta.main;
-  const entry = process.argv[1];
-  return entry !== undefined && import.meta.url.endsWith(entry.split("/").pop() ?? "");
-};
-
-if (isDirectRun()) {
+// import.meta.main works in both Bun and Node 24+.
+if (import.meta.main) {
   await main();
 }

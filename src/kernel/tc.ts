@@ -6,14 +6,11 @@
 import { Name } from "./name.ts";
 import {
   Level,
-  levelEq,
-  levelListEq,
   isEquivalent,
   mkSucc,
   mkIMax,
   normalizesToZero,
   getUndefParam,
-  levelToString,
 } from "./level.ts";
 import {
   type Expr,
@@ -43,27 +40,17 @@ import {
   cheapBetaReduce,
   exprToString,
 } from "./expr.ts";
+import { KernelError } from "./error.ts";
 import {
-  Environment,
-  KernelError,
-  type Decl,
-  type DefinitionSafety,
-  type RecVal,
-  type Hints,
-  compareHints,
-  declHasValue,
-  declIsUnsafe,
-  recMajorIdx,
-  isNonRecStructure,
-} from "./env.ts";
+  Environment, type Decl, type DefinitionSafety, type RecVal, type Hints, compareHints, declHasValue, declIsUnsafe, recMajorIdx, isNonRecStructure, } from "./env.ts";
 
 // ---------------------------------------------------------------------------
 // Known names
 // ---------------------------------------------------------------------------
 
-export const natName = Name.simple("Nat");
-export const boolName = Name.simple("Bool");
-export const stringName = Name.simple("String");
+const natName = Name.simple("Nat");
+const boolName = Name.simple("Bool");
+const stringName = Name.simple("String");
 const natZero = natName.str("zero");
 const natSucc = natName.str("succ");
 const natAdd = natName.str("add");
@@ -96,9 +83,9 @@ const mkBoolTrue = () => new Const(boolTrue, []);
 const mkBoolFalse = () => new Const(boolFalse, []);
 
 /** Upper bound in bytes on Nat numerals, as in the real kernel. */
-export const NAT_MAX_SIZE = 128 * 1024 * 1024;
+const NAT_MAX_SIZE = 128 * 1024 * 1024;
 
-export function natSizeBytes(v: bigint): number {
+function natSizeBytes(v: bigint): number {
   if (v < 0x100000000n) return 4;
   // Base-16 conversion is linear in the size of the numeral.
   return Math.ceil(v.toString(16).length / 2);
@@ -106,30 +93,28 @@ export function natSizeBytes(v: bigint): number {
 
 function checkNatSize(numBytes: number): void {
   if (numBytes > NAT_MAX_SIZE)
-    throw new KernelError(
-      "the kernel refused a `Nat` numeral because its size exceeds the maximum",
+    throw new KernelError("natLimit", "the kernel refused a `Nat` numeral because its size exceeds the maximum",
     );
 }
 
 function getCountArg(count: bigint, op: string): number {
   if (count > 0xffffffffn)
-    throw new KernelError(
-      `the kernel refused to evaluate \`${op}\` because its second argument does not fit in a 32-bit unsigned integer`,
+    throw new KernelError("natLimit", `the kernel refused to evaluate \`${op}\` because its second argument does not fit in a 32-bit unsigned integer`,
     );
   return Number(count);
 }
 
-export function natLitToConstructor(v: bigint): Expr {
+function natLitToConstructor(v: bigint): Expr {
   if (v === 0n) return new Const(natZero, []);
   return new App(new Const(natSucc, []), new Lit(v - 1n));
 }
 
-export function stringLitToConstructor(s: string): Expr {
+function stringLitToConstructor(s: string): Expr {
   const charType = new Const(charName, []);
   const consC = new App(new Const(listCons, [Level.zero]), charType);
   const nilC = new App(new Const(listNil, [Level.zero]), charType);
   const ofNat = new Const(charOfNat, []);
-  const cps = [...s].map((c) => BigInt(c.codePointAt(0)!));
+  const cps = Array.from(s).map((c) => BigInt(c.codePointAt(0) ?? 0));
   let r: Expr = nilC;
   for (let i = cps.length - 1; i >= 0; i--) {
     r = mkAppN(consC, [new App(ofNat, new Lit(cps[i]!)), r]);
@@ -172,7 +157,7 @@ export class LocalCtx {
     let r = abstractFVars(e, fvars);
     for (let i = fvars.length - 1; i >= 0; i--) {
       const decl = this.map.get(fvars[i]!.fid);
-      if (decl === undefined) throw new KernelError("unknown free variable in mkBinding");
+      if (decl === undefined) throw new KernelError("unknownFVar", "unknown free variable in mkBinding");
       const prefix = fvars.slice(0, i);
       const ty = abstractFVars(decl.type, prefix);
       if (decl.value !== undefined) {
@@ -235,7 +220,7 @@ type ReductionStatus = (typeof ReductionStatus)[keyof typeof ReductionStatus];
  * mirror the expr_map of the real kernel.
  */
 class ExprMap<V> {
-  private buckets = new Map<number, Array<{ k: Expr; v: V }>>();
+  private buckets = new Map<number, { k: Expr; v: V }[]>();
 
   get(k: Expr): V | undefined {
     const b = this.buckets.get(k.hash);
@@ -247,11 +232,9 @@ class ExprMap<V> {
   }
 
   set(k: Expr, v: V): void {
-    let b = this.buckets.get(k.hash);
-    if (b === undefined) {
-      b = [];
-      this.buckets.set(k.hash, b);
-    }
+    const existing = this.buckets.get(k.hash);
+    const b = existing ?? [];
+    if (existing === undefined) this.buckets.set(k.hash, b);
     for (const e of b) {
       if (e.k === k || exprEq(e.k, k)) {
         e.v = v;
@@ -264,7 +247,7 @@ class ExprMap<V> {
 
 /** A set of unordered expression pairs, keyed structurally. */
 class ExprPairSet {
-  private buckets = new Map<number, Array<{ a: Expr; b: Expr }>>();
+  private buckets = new Map<number, { a: Expr; b: Expr }[]>();
 
   private key(a: Expr, b: Expr): number {
     // Order-free combination.
@@ -283,11 +266,9 @@ class ExprPairSet {
   add(a: Expr, b: Expr): void {
     if (this.has(a, b)) return;
     const k = this.key(a, b);
-    let bucket = this.buckets.get(k);
-    if (bucket === undefined) {
-      bucket = [];
-      this.buckets.set(k, bucket);
-    }
+    const existing = this.buckets.get(k);
+    const bucket = existing ?? [];
+    if (existing === undefined) this.buckets.set(k, bucket);
     bucket.push({ a, b });
   }
 }
@@ -333,14 +314,14 @@ export class TypeChecker {
     if (e.kind === ExprKind.Sort) return e;
     const n = this.whnf(e);
     if (n.kind === ExprKind.Sort) return n;
-    throw new KernelError(`type expected at\n  ${exprToString(s)}`);
+    throw new KernelError("typeExpected", `type expected at\n  ${exprToString(s)}`);
   }
 
   ensurePiCore(e: Expr, s: Expr): Pi {
     if (e.kind === ExprKind.Pi) return e;
     const n = this.whnf(e);
     if (n.kind === ExprKind.Pi) return n;
-    throw new KernelError(`function expected at\n  ${exprToString(s)}`);
+    throw new KernelError("functionExpected", `function expected at\n  ${exprToString(s)}`);
   }
 
   ensureSort(e: Expr, s: Expr): Sort {
@@ -356,7 +337,7 @@ export class TypeChecker {
     if (this.lparams !== null) {
       const undef = getUndefParam(l, this.lparams);
       if (undef !== null)
-        throw new KernelError(`invalid reference to undefined universe level parameter '${undef}'`);
+        throw new KernelError("universe", `invalid reference to undefined universe level parameter '${undef}'`);
     }
   }
 
@@ -369,7 +350,7 @@ export class TypeChecker {
 
   private inferFVar(e: FVar): Expr {
     const decl = this.lctx.find(e);
-    if (decl === undefined) throw new KernelError("unknown free variable");
+    if (decl === undefined) throw new KernelError("unknownFVar", "unknown free variable");
     return decl.type;
   }
 
@@ -378,15 +359,13 @@ export class TypeChecker {
     const ps = info.cv.lparams;
     const ls = e.levels;
     if (ps.length !== ls.length)
-      throw new KernelError(
-        `incorrect number of universe levels parameters for '${e.name}', #${ps.length} expected, #${ls.length} provided`,
+      throw new KernelError("universe", `incorrect number of universe levels parameters for '${e.name}', #${ps.length} expected, #${ls.length} provided`,
       );
     if (!inferOnly) {
       if (declIsUnsafe(info) && this.definitionSafety !== "unsafe")
-        throw new KernelError(`invalid declaration, it uses unsafe declaration '${e.name}'`);
+        throw new KernelError("unsafe", `invalid declaration, it uses unsafe declaration '${e.name}'`);
       if (info.kind === "def" && info.safety === "partial" && this.definitionSafety === "safe")
-        throw new KernelError(
-          `invalid declaration, safe declaration must not contain partial declaration '${e.name}'`,
+        throw new KernelError("unsafe", `invalid declaration, safe declaration must not contain partial declaration '${e.name}'`,
         );
       for (const l of ls) this.checkLevel(l);
     }
@@ -435,8 +414,7 @@ export class TypeChecker {
       const aType = this.inferTypeCore(e.arg, inferOnly);
       const dType = fType.type;
       if (!this.isDefEq(aType, dType)) {
-        throw new KernelError(
-          `application type mismatch at\n  ${exprToString(e)}\nargument type\n  ${exprToString(aType)}\nexpected type\n  ${exprToString(dType)}`,
+        throw new KernelError("typeMismatch", `application type mismatch at\n  ${exprToString(e)}\nargument type\n  ${exprToString(aType)}\nexpected type\n  ${exprToString(dType)}`,
         );
       }
       return instantiate1(fType.body, e.arg);
@@ -468,7 +446,7 @@ export class TypeChecker {
         this.ensureSortCore(this.inferTypeCore(type, inferOnly), type);
         const valType = this.inferTypeCore(val, inferOnly);
         if (!this.isDefEq(valType, type)) {
-          throw new KernelError(`type mismatch at \`let ${e.binderName}\``);
+          throw new KernelError("typeMismatch", `type mismatch at \`let ${e.binderName}\``);
         }
       }
       fvars.push(this.lctx.mkLocalDecl(e.binderName, type, "default", val));
@@ -480,39 +458,39 @@ export class TypeChecker {
   }
 
   private inferProj(e: Proj, inferOnly: boolean): Expr {
-    let type = this.whnf(this.inferTypeCore(e.struct, inferOnly));
+    const type = this.whnf(this.inferTypeCore(e.struct, inferOnly));
     if (!Number.isSafeInteger(e.idx) || e.idx < 0 || e.idx > 0xffffffff)
-      throw new KernelError(`invalid projection\n  ${exprToString(e)}`);
-    const invalid = () => new KernelError(`invalid projection\n  ${exprToString(e)}`);
+      throw new KernelError("invalidProjection", `invalid projection\n  ${exprToString(e)}`);
+    const invalidMsg = (): string => `invalid projection\n  ${exprToString(e)}`;
     const [I, args] = getAppArgs(type);
-    if (I.kind !== ExprKind.Const) throw invalid();
-    if (I.name !== e.structName) throw invalid();
+    if (I.kind !== ExprKind.Const) throw new KernelError("invalidProjection", invalidMsg());
+    if (I.name !== e.structName) throw new KernelError("invalidProjection", invalidMsg());
     const IInfo = this.env.get(I.name);
-    if (IInfo.kind !== "induct") throw invalid();
-    if (IInfo.ctors.length !== 1 || args.length !== IInfo.numParams + IInfo.numIndices) throw invalid();
+    if (IInfo.kind !== "induct") throw new KernelError("invalidProjection", invalidMsg());
+    if (IInfo.ctors.length !== 1 || args.length !== IInfo.numParams + IInfo.numIndices) throw new KernelError("invalidProjection", invalidMsg());
 
     const cInfo = this.env.get(IInfo.ctors[0]!);
     let r = instantiateLevelParams(cInfo.cv.type, cInfo.cv.lparams, I.levels);
     for (let i = 0; i < IInfo.numParams; i++) {
       r = this.whnf(r);
-      if (r.kind !== ExprKind.Pi) throw invalid();
+      if (r.kind !== ExprKind.Pi) throw new KernelError("invalidProjection", invalidMsg());
       r = instantiate1(r.body, args[i]!);
     }
     const isPropType = this.isProp(type);
     for (let i = 0; i < e.idx; i++) {
       r = this.whnf(r);
-      if (r.kind !== ExprKind.Pi) throw invalid();
+      if (r.kind !== ExprKind.Pi) throw new KernelError("invalidProjection", invalidMsg());
       if (hasLooseBVars(r.body)) {
-        if (isPropType && !this.isProp(r.type)) throw invalid();
+        if (isPropType && !this.isProp(r.type)) throw new KernelError("invalidProjection", invalidMsg());
         r = instantiate1(r.body, new Proj(I.name, i, e.struct));
       } else {
         r = r.body;
       }
     }
     r = this.whnf(r);
-    if (r.kind !== ExprKind.Pi) throw invalid();
+    if (r.kind !== ExprKind.Pi) throw new KernelError("invalidProjection", invalidMsg());
     r = r.type;
-    if (isPropType && !this.isProp(r)) throw invalid();
+    if (isPropType && !this.isProp(r)) throw new KernelError("invalidProjection", invalidMsg());
     return r;
   }
 
@@ -523,7 +501,7 @@ export class TypeChecker {
 
   private inferTypeCore(e: Expr, inferOnly: boolean): Expr {
     if (hasLooseBVars(e))
-      throw new KernelError("type checker does not support loose bound variables");
+      throw new KernelError("looseBVar", "type checker does not support loose bound variables");
     const cache = this.inferTypeCache[inferOnly ? 1 : 0];
     const cached = cache.get(e);
     if (cached !== undefined) return cached;
@@ -540,7 +518,7 @@ export class TypeChecker {
         r = this.inferFVar(e);
         break;
       case ExprKind.BVar:
-        throw new KernelError("unreachable: loose bvar in inferTypeCore");
+        throw new KernelError("unreachable", "unreachable: loose bvar in inferTypeCore");
       case ExprKind.Sort:
         if (!inferOnly) this.checkLevel(e.level);
         r = new Sort(mkSucc(e.level));
@@ -569,12 +547,12 @@ export class TypeChecker {
 
   private isLetFVar(e: FVar): boolean {
     const decl = this.lctx.find(e);
-    return decl !== undefined && decl.value !== undefined;
+    return decl?.value !== undefined;
   }
 
   private whnfFVar(e: FVar, cheapRec: boolean, cheapProj: boolean): Expr {
     const decl = this.lctx.find(e);
-    if (decl !== undefined && decl.value !== undefined) {
+    if (decl?.value !== undefined) {
       return this.whnfCore(decl.value, cheapRec, cheapProj);
     }
     return e;
@@ -588,7 +566,7 @@ export class TypeChecker {
     const [mk, args] = getAppArgs(c);
     if (mk.kind !== ExprKind.Const) return null;
     const mkInfo = this.env.find(mk.name);
-    if (mkInfo === undefined || mkInfo.kind !== "ctor") return null;
+    if (mkInfo?.kind !== "ctor") return null;
     if (mkInfo.induct !== sname) return null;
     const nparams = mkInfo.numParams;
     if (nparams + idx < args.length) return args[nparams + idx]!;
@@ -665,7 +643,7 @@ export class TypeChecker {
         r = this.whnfCore(instantiate1(e.body, e.value), cheapRec, cheapProj);
         break;
       default:
-        throw new KernelError("unreachable in whnfCore");
+        throw new KernelError("unreachable", "unreachable in whnfCore");
     }
 
     if (!cheapRec && !cheapProj) {
@@ -776,8 +754,7 @@ export class TypeChecker {
     if (exp === null) return null;
     const k = getCountArg(exp, "Nat.pow");
     if (base > 1n && k !== 0 && natSizeBytes(base) > NAT_MAX_SIZE / k)
-      throw new KernelError(
-        "the kernel refused to evaluate `Nat.pow` because the result would exceed the maximum numeral size",
+      throw new KernelError("natLimit", "the kernel refused to evaluate `Nat.pow` because the result would exceed the maximum numeral size",
       );
     return new Lit(base ** BigInt(k));
   }
@@ -880,7 +857,7 @@ export class TypeChecker {
     const [d, args] = getAppArgs(type);
     if (d.kind !== ExprKind.Const) return null;
     const info = this.env.find(d.name);
-    if (info === undefined || info.kind !== "induct" || info.ctors.length === 0) return null;
+    if (info?.kind !== "induct" || info.ctors.length === 0) return null;
     return mkAppN(new Const(info.ctors[0]!, d.levels), args.slice(0, numParams));
   }
 
@@ -888,7 +865,7 @@ export class TypeChecker {
     const [I, args] = getAppArgs(eType);
     if (I.kind !== ExprKind.Const) return e;
     const IInfo = this.env.find(I.name);
-    if (IInfo === undefined || IInfo.kind !== "induct" || IInfo.ctors.length === 0) return e;
+    if (IInfo?.kind !== "induct" || IInfo.ctors.length === 0) return e;
     const ctorName = IInfo.ctors[0]!;
     const ctorVal = this.env.get(ctorName);
     if (ctorVal.kind !== "ctor") return e;
@@ -903,7 +880,7 @@ export class TypeChecker {
     const fn = getAppFn(e);
     if (fn.kind !== ExprKind.Const) return false;
     const info = this.env.find(fn.name);
-    return info !== undefined && info.kind === "ctor";
+    return info?.kind === "ctor";
   }
 
   private toCnstrWhenK(rval: RecVal, e: Expr, whnfFn: (x: Expr) => Expr): Expr {
@@ -931,7 +908,7 @@ export class TypeChecker {
     const recFn = getAppFn(e);
     if (recFn.kind !== ExprKind.Const) return null;
     const recInfo = this.env.find(recFn.name);
-    if (recInfo === undefined || recInfo.kind !== "rec") return null;
+    if (recInfo?.kind !== "rec") return null;
     const [, recArgs] = getAppArgs(e);
     const majorIdx = recMajorIdx(recInfo);
     if (majorIdx >= recArgs.length) return null;
@@ -949,7 +926,7 @@ export class TypeChecker {
     }
     const majorFn = getAppFn(major);
     if (majorFn.kind !== ExprKind.Const) return null;
-    const rule = recInfo.rules.find((r) => r.ctor === (majorFn as Const).name);
+    const rule = recInfo.rules.find((r) => r.ctor === (majorFn).name);
     if (rule === undefined) return null;
     const [, majorArgs] = getAppArgs(major);
     if (rule.nfields > majorArgs.length) return null;
@@ -1010,7 +987,7 @@ export class TypeChecker {
         if (!this.isDefEq(varTType, varSType)) return false;
       }
       if (t.body.looseBVarRange > 0 || s.body.looseBVarRange > 0) {
-        if (varSType === null) varSType = instantiateRev(s.type, subst);
+        varSType ??= instantiateRev(s.type, subst);
         subst.push(this.lctx.mkLocalDecl(s.binderName, varSType, s.binderInfo));
       } else {
         subst.push(dontCare);
@@ -1071,7 +1048,7 @@ export class TypeChecker {
     const f = getAppFn(s);
     if (f.kind !== ExprKind.Const) return false;
     const fInfo = this.env.find(f.name);
-    if (fInfo === undefined || fInfo.kind !== "ctor") return false;
+    if (fInfo?.kind !== "ctor") return false;
     if (getAppNumArgs(s) !== fInfo.numParams + fInfo.numFields) return false;
     if (!isNonRecStructure(this.env, fInfo.induct)) return false;
     if (!this.isDefEq(this.inferType(t), this.inferType(s))) return false;
@@ -1127,8 +1104,8 @@ export class TypeChecker {
       if (tnNew !== null) tn = tnNew;
       else sn = this.whnfCore(this.unfoldDefinition(sn)!, false, true);
     } else {
-      const hT = (dT as { hints?: Hints }).hints ?? ({ kind: "opaque" } as Hints);
-      const hS = (dS as { hints?: Hints }).hints ?? ({ kind: "opaque" } as Hints);
+      const hT = (dT as { hints?: Hints }).hints ?? ({ kind: "opaque" });
+      const hS = (dS as { hints?: Hints }).hints ?? ({ kind: "opaque" });
       const c = compareHints(hT, hS);
       if (c < 0) {
         tn = this.whnfCore(this.unfoldDefinition(tn)!, false, true);
@@ -1277,9 +1254,9 @@ export class TypeChecker {
     if (r !== Lbool.Undef) return r === Lbool.True;
 
     // Basic support for proofs by reflection: fully reduce against Bool.true.
-    if (!t.hasFVar && s.kind === ExprKind.Const && (s as Const).name === boolTrue) {
+    if (!t.hasFVar && s.kind === ExprKind.Const && (s).name === boolTrue) {
       const w = this.whnf(t);
-      if (w.kind === ExprKind.Const && (w as Const).name === boolTrue) return true;
+      if (w.kind === ExprKind.Const && (w).name === boolTrue) return true;
     }
 
     let tn = this.whnfCore(t, false, true);
@@ -1299,18 +1276,18 @@ export class TypeChecker {
     if (lazy.result !== Lbool.Undef) return lazy.result === Lbool.True;
 
     if (tn.kind === ExprKind.Const && sn.kind === ExprKind.Const) {
-      if (tn.name === (sn as Const).name && this.isDefEqLevels(tn.levels, (sn as Const).levels)) return true;
+      if (tn.name === (sn).name && this.isDefEqLevels(tn.levels, (sn).levels)) return true;
     }
 
-    if (tn.kind === ExprKind.FVar && sn.kind === ExprKind.FVar && tn.fid === (sn as FVar).fid) return true;
+    if (tn.kind === ExprKind.FVar && sn.kind === ExprKind.FVar && tn.fid === (sn).fid) return true;
 
     if (
       tn.kind === ExprKind.Proj &&
       sn.kind === ExprKind.Proj &&
-      tn.structName === (sn as Proj).structName &&
-      tn.idx === (sn as Proj).idx
+      tn.structName === (sn).structName &&
+      tn.idx === (sn).idx
     ) {
-      if (this.lazyDeltaProjReduction(tn.struct, (sn as Proj).struct, tn.structName, tn.idx)) return true;
+      if (this.lazyDeltaProjReduction(tn.struct, (sn).struct, tn.structName, tn.idx)) return true;
     }
 
     const tnn = this.whnfCore(tn);
@@ -1342,12 +1319,12 @@ function recMajorInductFromType(r: RecVal): Name {
   const nmajor = recMajorIdx(r);
   let t: Expr = r.cv.type;
   for (let i = 0; i < nmajor; i++) {
-    if (t.kind !== ExprKind.Pi) throw new KernelError(`recursor '${r.cv.name}' type has too few binders`);
+    if (t.kind !== ExprKind.Pi) throw new KernelError("recursor", `recursor '${r.cv.name}' type has too few binders`);
     t = t.body;
   }
-  if (t.kind !== ExprKind.Pi) throw new KernelError(`recursor '${r.cv.name}' type has no major premise`);
+  if (t.kind !== ExprKind.Pi) throw new KernelError("recursor", `recursor '${r.cv.name}' type has no major premise`);
   const head = getAppFn(t.type);
   if (head.kind !== ExprKind.Const)
-    throw new KernelError(`recursor '${r.cv.name}' major premise is not an inductive application`);
+    throw new KernelError("recursor", `recursor '${r.cv.name}' major premise is not an inductive application`);
   return head.name;
 }

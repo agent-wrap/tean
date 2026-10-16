@@ -184,6 +184,93 @@ Command: `bun run scripts/arena.ts --timeout 240 --jobs 6
   corpora (init, std, mathlib), not in the downloadable tarball. The top
   score there is 208/234. Nobody holds 234.
 
+## 2026-10-15 — Strictness work starts from the defect record, not a preset
+
+Asked: which compiler flag, lint rule, or type invariant would have caught
+each real bug of this project? Written before any config.
+
+| Bug | What would have caught it |
+|---|---|
+| `u1` vs `u_1` in `Name.appendAfter` | Nothing static. String logic. Only the arena diff found it |
+| Reversed child-pop order in `instantiate` | Nothing static. `bun test` caught it at once |
+| Missed unfold cache | Nothing static. Only the profile found it |
+| `outParam` not stripped in recursor locals | Nothing static. Semantic port gap, found by diffing real bytes |
+| 4 plain `Error` throws in kernel files | A restricted-throw lint rule (new, below) |
+| Potential: a non-exhaustive switch on a new ExprKind | `switch-exhaustiveness-check` (new, below) |
+| Potential: `==` on bigint/number mix | `eqeqeq` (new, below) |
+| Potential: `Bun.*` creeping into src and breaking the Node runner | `no-restricted-globals` (new, below) |
+
+Honest reading: the four REAL bugs of day one were semantic, and no
+static rule catches them. The rules below defend against classes that
+have not fired yet, and the table says so. Tests and outside diffs remain
+the primary net.
+
+Code as data before the change (commands: grep over `src/`):
+54 non-null assertions, 51 `as` casts, 0 `any`, throws: 71 KernelError,
+19 ParseError, 4 plain Error.
+
+Perf baseline, same machine, before the refactor:
+`magma-list-deep-n21` 3.56 s, `init-prelude` 0.278 s
+(`node --stack-size=60000` per run.sh).
+
+Decision record: **no Effect library.** The program is nearly pure. The
+one benefit, typed errors, comes from a zero-dependency Result union and
+an error-code taxonomy. The kernel keeps `throw` internally, as the C++
+kernel does. GC was 17.5% of a hot test; an allocating effect wrapper in
+the kernel fails the perf gate by construction.
+
+## 2026-10-16 — Strictness landed, and the oracles judged it
+
+Commands: `bun run verify` (check, lint, test, type-coverage, knip,
+suppressions), `bun run scripts/arena.ts --timeout 240 --jobs 6`, timed
+node runs, two bug replays, one Stryker run.
+
+What changed:
+- tsconfig: the `strict` umbrella expanded into every individual flag,
+  each with its defect class in a comment, plus `noUnusedLocals`,
+  `noUnusedParameters`, `noImplicitReturns`,
+  `noPropertyAccessFromIndexSignature`, `isolatedModules`, and friends.
+  First catch on arrival: 4 dead imports.
+- ESLint flat config, `strictTypeChecked` + `stylisticTypeChecked`,
+  type-aware, `--max-warnings 0`. First run: 109 findings, 0 of them a
+  soundness bug. Project-invariant layer: `eqeqeq`,
+  `switch-exhaustiveness-check`, no `Bun` global in src, `JSON.parse`
+  only in the parser, kernel throws `KernelError` only. Non-null
+  assertions stay allowed in `src/kernel` (hot-path index access under
+  `noUncheckedIndexedAccess`) and are banned in boundary code.
+- Typed errors, no Effect: `KernelError` now carries a `code` from a
+  17-value union (72 throw sites retyped), `ParseError` maps to code
+  `parse`, and `src/result.ts` + `tryStep` in the checker convert throws
+  to data at the boundary. `main.ts` decides exit codes from the typed
+  kind, not instanceof chains. Moving `KernelError` to
+  `src/kernel/error.ts` also removed a latent env↔expr import cycle.
+- Ratchets in CI: type-coverage --strict **98.55%** floor (`--at-least
+  98.5`), knip clean after pruning one dead re-export, one duplicated
+  function (`recMajorInduct` in env.ts), and 15 unused exports.
+  Suppression policy: zero in `src/kernel`, same-line reason elsewhere;
+  `scripts/check-suppressions.sh` enforces it. Current count: zero
+  suppressions anywhere.
+
+What the oracles said:
+- Arena after the refactor: **199/199** (good 127/127, bad 72/72).
+- Perf, same machine: magma-list-deep-n21 3.56 s → 3.63 s, init-prelude
+  0.278 s → 0.286 s. Within noise.
+- Bug replay 1 (`u_1` underscore removed): tsc 0 errors, eslint 0
+  findings, 22/22 unit tests pass. ONLY the arena oracle refuses
+  (exportMismatch on PUnit.rec). No static rule earns this bug.
+- Bug replay 2 (instantiate pop order swapped): tsc 0, eslint 2
+  incidental findings, **4 unit tests fail**. Tests own this bug.
+- StrykerJS on `src/kernel/level.ts` against `tests/level.test.ts`
+  alone: mutation score **51.8%** (187 of 361 mutants killed, 10 s).
+  Honest reading: the level unit tests kill half the mutants; the
+  arena suite is the real net but is too slow to run per mutant.
+  Raising this score is future test work, now with a number on it.
+
+One more dead idea for the record: a never-returning `invalid()` helper
+was supposed to satisfy the restricted-throw rule in `inferProj`, but
+TypeScript does not narrow after a never-call the way it narrows after
+`throw`. The throw stays inline with a shared message helper.
+
 ## Open questions
 
 - ~~What is the arena submission interface?~~ Answered: a PR to

@@ -6,17 +6,39 @@
  */
 import { Name } from "./kernel/name.ts";
 import { type Expr, exprEq } from "./kernel/expr.ts";
+import { KernelError } from "./kernel/error.ts";
 import {
-  Environment,
-  KernelError,
-  checkDuplicatedUnivParams,
-  type ConstantVal,
-  type DefinitionSafety,
-} from "./kernel/env.ts";
+  Environment, checkDuplicatedUnivParams, type ConstantVal, type DefinitionSafety, } from "./kernel/env.ts";
 import { TypeChecker } from "./kernel/tc.ts";
 import { addInductive, type InductiveDecl, type InductiveType } from "./kernel/inductive.ts";
 import { addQuot, checkExportedQuot } from "./kernel/quot.ts";
+import { ParseError } from "./export/parser.ts";
 import type { ExpDecl, ExpInductive } from "./export/parser.ts";
+import { type Result, ok, err } from "./result.ts";
+
+/**
+ * A typed boundary failure. "refusal" means the kernel or parser refused
+ * the input (arena exit code 1). "bug" means the checker itself broke
+ * (arena exit code 3). The classification happens here, once.
+ */
+export type CheckFailure =
+  | { kind: "refusal"; code: string; message: string }
+  | { kind: "bug"; message: string };
+
+function toCheckFailure(e: unknown): CheckFailure {
+  if (e instanceof KernelError) return { kind: "refusal", code: e.code, message: e.message };
+  if (e instanceof ParseError) return { kind: "refusal", code: "parse", message: e.message };
+  return { kind: "bug", message: e instanceof Error ? e.message : String(e) };
+}
+
+/** Run one boundary step, converting throws into a typed Result. */
+export function tryStep<T>(f: () => T): Result<T, CheckFailure> {
+  try {
+    return ok(f());
+  } catch (e) {
+    return err(toCheckFailure(e));
+  }
+}
 
 export class Checker {
   env = new Environment();
@@ -52,14 +74,14 @@ export class Checker {
           const tc2 = new TypeChecker(this.env, "unsafe");
           const valType = tc2.check(d.value, d.levelParams);
           if (!tc2.isDefEq(valType, d.type))
-            throw new KernelError(`definition '${d.name}': value type does not match declared type`);
+            throw new KernelError("typeMismatch", `definition '${d.name}': value type does not match declared type`);
         } else {
           const safety: DefinitionSafety = d.safety === "partial" ? "safe" : "safe";
           const tc = new TypeChecker(this.env, safety);
           this.checkConstantVal(cv, tc);
           const valType = tc.check(d.value, d.levelParams);
           if (!tc.isDefEq(valType, d.type))
-            throw new KernelError(`definition '${d.name}': value type does not match declared type`);
+            throw new KernelError("typeMismatch", `definition '${d.name}': value type does not match declared type`);
           this.env.addCore({ kind: "def", cv, value: d.value, hints: d.hints, safety: d.safety });
         }
         break;
@@ -68,10 +90,10 @@ export class Checker {
         const cv = { name: d.name, lparams: d.levelParams, type: d.type };
         const tc = new TypeChecker(this.env, "safe");
         this.checkConstantVal(cv, tc);
-        if (!tc.isProp(d.type)) throw new KernelError(`theorem '${d.name}': type is not a proposition`);
+        if (!tc.isProp(d.type)) throw new KernelError("typeMismatch", `theorem '${d.name}': type is not a proposition`);
         const valType = tc.check(d.value, d.levelParams);
         if (!tc.isDefEq(valType, d.type))
-          throw new KernelError(`theorem '${d.name}': value type does not match declared type`);
+          throw new KernelError("typeMismatch", `theorem '${d.name}': value type does not match declared type`);
         this.env.addCore({ kind: "thm", cv, value: d.value });
         break;
       }
@@ -81,7 +103,7 @@ export class Checker {
         this.checkConstantVal(cv, tc);
         const valType = tc.check(d.value, d.levelParams);
         if (!tc.isDefEq(valType, d.type))
-          throw new KernelError(`opaque '${d.name}': value type does not match declared type`);
+          throw new KernelError("typeMismatch", `opaque '${d.name}': value type does not match declared type`);
         this.env.addCore({ kind: "opaque", cv, value: d.value, isUnsafe: d.isUnsafe });
         break;
       }
@@ -103,9 +125,10 @@ export class Checker {
   }
 
   private addInductiveDecl(d: ExpInductive): void {
-    if (d.types.length === 0) throw new KernelError("empty inductive declaration");
-    const lparams = d.types[0]!.levelParams;
-    const nparams = d.types[0]!.numParams;
+    const first = d.types[0];
+    if (first === undefined) throw new KernelError("inductive", "empty inductive declaration");
+    const lparams = first.levelParams;
+    const nparams = first.numParams;
     const ctorByName = new Map<number, (typeof d.ctors)[number]>();
     for (const c of d.ctors) ctorByName.set(c.name.id, c);
     const types: InductiveType[] = d.types.map((t) => ({
@@ -113,7 +136,7 @@ export class Checker {
       type: t.type,
       ctors: t.ctors.map((cn) => {
         const c = ctorByName.get(cn.id);
-        if (c === undefined) throw new KernelError(`inductive '${t.name}': constructor '${cn}' not in export`);
+        if (c === undefined) throw new KernelError("exportMismatch", `inductive '${t.name}': constructor '${cn}' not in export`);
         return { name: c.name, type: c.type };
       }),
     }));
@@ -125,7 +148,7 @@ export class Checker {
 
     // Now compare the derived declarations against the exported metadata.
     const mismatch = (what: string, n: Name): never => {
-      throw new KernelError(`exported ${what} for '${n}' does not match the derived one`);
+      throw new KernelError("exportMismatch", `exported ${what} for '${n}' does not match the derived one`);
     };
     const sameNames = (a: Name[], b: Name[]): boolean => a.length === b.length && a.every((x, i) => x === b[i]);
     const sameTypeModuloLparams = (expLparams: Name[], expType: Expr, gotLparams: Name[], gotType: Expr): boolean =>
@@ -175,8 +198,9 @@ export class Checker {
       )
         return mismatch("recursor", r.name);
       for (let i = 0; i < r.rules.length; i++) {
-        const er = r.rules[i]!;
-        const gr = got.rules[i]!;
+        const er = r.rules[i];
+        const gr = got.rules[i];
+        if (er === undefined || gr === undefined) return mismatch("recursor rule", r.name);
         if (er.ctor !== gr.ctor || er.nfields !== gr.nfields || !exprEq(er.rhs, gr.rhs))
           return mismatch("recursor rule", r.name);
       }

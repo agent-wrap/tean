@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "mutate": [
+    "src/kernel/level.ts"
+  ],
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "bun test tests/level.test.ts"
+  },
+  "reporters": [
+    "clear-text"
+  ],
+  "concurrency": 8,
+  "tempDirName": ".stryker-tmp",
+  "disableTypeChecks": true,
+  "ignorePatterns": [
+    ".devbox",
+    "vendor",
+    "docs",
+    ".github",
+    "node_modules"
+  ]
+}

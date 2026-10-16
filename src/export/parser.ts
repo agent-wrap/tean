@@ -6,13 +6,13 @@
 import { Name } from "../kernel/name.ts";
 import { Level } from "../kernel/level.ts";
 import { type Expr, BVar, Sort, Const, App, Lam, Pi, Let, Lit, Proj, type BinderInfo } from "../kernel/expr.ts";
-import { KernelError, type Hints, type DefinitionSafety } from "../kernel/env.ts";
+import { type Hints, type DefinitionSafety} from "../kernel/env.ts";
 
 export class ParseError extends Error {}
 
 // Exported declaration shapes, carrying all metadata for validation.
 
-export interface ExpAxiom {
+interface ExpAxiom {
   kind: "axiom";
   name: Name;
   levelParams: Name[];
@@ -20,7 +20,7 @@ export interface ExpAxiom {
   isUnsafe: boolean;
 }
 
-export interface ExpDef {
+interface ExpDef {
   kind: "def";
   name: Name;
   levelParams: Name[];
@@ -31,7 +31,7 @@ export interface ExpDef {
   all: Name[];
 }
 
-export interface ExpOpaque {
+interface ExpOpaque {
   kind: "opaque";
   name: Name;
   levelParams: Name[];
@@ -41,7 +41,7 @@ export interface ExpOpaque {
   all: Name[];
 }
 
-export interface ExpThm {
+interface ExpThm {
   kind: "thm";
   name: Name;
   levelParams: Name[];
@@ -50,7 +50,7 @@ export interface ExpThm {
   all: Name[];
 }
 
-export interface ExpQuot {
+interface ExpQuot {
   kind: "quot";
   name: Name;
   levelParams: Name[];
@@ -83,7 +83,7 @@ export interface ExpConstructorVal {
   isUnsafe: boolean;
 }
 
-export interface ExpRecursorRule {
+interface ExpRecursorRule {
   ctor: Name;
   nfields: number;
   rhs: Expr;
@@ -206,7 +206,7 @@ export class ExportParser {
     }
 
     if ("meta" in o) {
-      this.meta = o["meta"] as unknown as ExportMeta;
+      this.meta = o["meta"] as ExportMeta;
       return null;
     }
     if ("in" in o) {
@@ -438,4 +438,3 @@ export class ExportParser {
   }
 }
 
-export { KernelError };

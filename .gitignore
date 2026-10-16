@@ -2,3 +2,5 @@ node_modules/
 vendor/
 .devbox/
 *.log
+.stryker-tmp/
+reports/

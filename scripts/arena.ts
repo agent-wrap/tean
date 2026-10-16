@@ -76,7 +76,7 @@ async function main(): Promise<void> {
   // bounded run never reads as full coverage.
   const exclude = getFlag("exclude", "").split(",").filter((s) => s !== "");
 
-  let tasks: Array<{ file: string; expected: "good" | "bad" }> = [
+  let tasks: { file: string; expected: "good" | "bad" }[] = [
     ...collect(join(dir, "good")).map((f) => ({ file: f, expected: "good" as const })),
     ...collect(join(dir, "bad")).map((f) => ({ file: f, expected: "bad" as const })),
   ];
