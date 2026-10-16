@@ -11,7 +11,8 @@
     "check:types-coverage": "type-coverage --strict --at-least 98.5",
     "check:dead-code": "knip",
     "check:suppressions": "./scripts/check-suppressions.sh",
-    "verify": "bun check && bun run lint && bun test && bun run check:types-coverage && bun run check:dead-code && bun run check:suppressions"
+    "verify": "bun check && bun run lint && bun test && bun run check:types-coverage && bun run check:dead-code && bun run check:suppressions",
+    "check:mutation": "stryker run"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^10.0.0",

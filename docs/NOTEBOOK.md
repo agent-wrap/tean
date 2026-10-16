@@ -271,6 +271,14 @@ was supposed to satisfy the restricted-throw rule in `inferProj`, but
 TypeScript does not narrow after a never-call the way it narrows after
 `throw`. The throw stays inline with a shared message helper.
 
+A process bug, kept honestly: the bug replays restored files with
+`git checkout --` while the day's fixes were still uncommitted, which
+silently reverted the lint fixes in `expr.ts` and `name.ts`, and that
+state got committed. `bun run verify` caught it on the next run. The
+lesson for the method: replay a bug with a reversible stash or patch,
+never with checkout against a dirty tree, and run the full verify gate
+immediately before the commit, not after.
+
 ## Open questions
 
 - ~~What is the arena submission interface?~~ Answered: a PR to

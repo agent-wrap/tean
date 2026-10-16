@@ -1,4 +1,15 @@
 {
-  "entry": ["src/main.ts", "scripts/*.ts", "tests/**/*.test.ts"],
-  "project": ["src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
+  "entry": [
+    "src/main.ts",
+    "scripts/*.ts",
+    "tests/**/*.test.ts"
+  ],
+  "project": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "ignoreDependencies": [
+    "@stryker-mutator/command-runner"
+  ]
 }

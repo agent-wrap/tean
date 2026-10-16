@@ -8,6 +8,7 @@
  * in lean4 src/kernel/expr_eq_fn.cpp).
  */
 import { Name } from "./name.ts";
+import { KernelError } from "./error.ts";
 import { Level, levelEq, levelListEq, instLevel } from "./level.ts";
 
 export const ExprKind = {
@@ -207,7 +208,7 @@ export class Lit extends ExprBase {
     this.hash =
       typeof val === "bigint"
         ? mix(29, Number(val % 1000000007n))
-        : mix(31, [...val].reduce((h, c) => mix(h, c.codePointAt(0)!), 0));
+        : mix(31, Array.from(val).reduce((h, c) => mix(h, c.codePointAt(0) ?? 0), 0));
   }
 }
 
@@ -324,7 +325,7 @@ export function getAppArgs(e: Expr): [Expr, Expr[]] {
 // Loose bound variables: lift, instantiate, abstract
 // ---------------------------------------------------------------------------
 
-export function liftLooseBVars(e: Expr, start: number, amount: number): Expr {
+function liftLooseBVars(e: Expr, start: number, amount: number): Expr {
   if (amount === 0) return e;
   const rec = (t: Expr, s: number): Expr => {
     if (t.looseBVarRange <= s) return t;
@@ -409,11 +410,10 @@ export function instantiate(e: Expr, subst: readonly Expr[]): Expr {
   const liftedSubst = (j: number, d: number): Expr => {
     if (d === 0) return subst[j]!;
     const key = d * n + j;
-    let r = liftCache.get(key);
-    if (r === undefined) {
-      r = liftLooseBVars(subst[j]!, 0, d);
-      liftCache.set(key, r);
-    }
+    const cached = liftCache.get(key);
+    if (cached !== undefined) return cached;
+    const r = liftLooseBVars(subst[j]!, 0, d);
+    liftCache.set(key, r);
     return r;
   };
 
@@ -528,7 +528,7 @@ export function instantiate(e: Expr, subst: readonly Expr[]): Expr {
           break;
         }
         default:
-          throw new Error("unreachable in instantiate rebuild");
+          throw new KernelError("unreachable", "unreachable in instantiate rebuild");
       }
       getMemo(d).set(t, r);
       results.push(r);
@@ -655,7 +655,7 @@ export function instantiateLevelParams(e: Expr, params: Name[], values: Level[])
           spine.push(cur);
           cur = cur.fn;
         }
-        if (head === undefined) head = rec(cur);
+        head ??= rec(cur);
         let acc = head;
         for (let i = spine.length - 1; i >= 0; i--) {
           const node = spine[i]!;
@@ -719,7 +719,7 @@ export function consumeTypeAnnotations(e: Expr): Expr {
 
 export function cheapBetaReduce(e: Expr): Expr {
   if (e.kind !== ExprKind.App) return e;
-  let fn = getAppFn(e);
+  const fn = getAppFn(e);
   if (fn.kind !== ExprKind.Lam) return e;
   const [, args] = getAppArgs(e);
   let i = 0;
