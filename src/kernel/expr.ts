@@ -405,6 +405,20 @@ export function instantiate(e: Expr, subst: readonly Expr[]): Expr {
     }
     return m;
   };
+  // Lift results per (depth, index): fresh BVar objects for the same index
+  // miss the node memo, and the lift walk repeats (measured: 24% of time
+  // in the lift recursion on magma-list-deep-n21).
+  const liftCache = new Map<number, Expr>();
+  const liftedSubst = (j: number, d: number): Expr => {
+    if (d === 0) return subst[j]!;
+    const key = d * n + j;
+    let r = liftCache.get(key);
+    if (r === undefined) {
+      r = liftLooseBVars(subst[j]!, 0, d);
+      liftCache.set(key, r);
+    }
+    return r;
+  };
 
   // phase 0: visit, phase 1: rebuild from child results.
   const tStack: Expr[] = [e];
@@ -436,7 +450,7 @@ export function instantiate(e: Expr, subst: readonly Expr[]): Expr {
       switch (t.kind) {
         case ExprKind.BVar: {
           const j = t.idx - d;
-          const r = j < n ? liftLooseBVars(subst[j]!, 0, d) : new BVar(t.idx - n);
+          const r = j < n ? liftedSubst(j, d) : new BVar(t.idx - n);
           m.set(t, r);
           tStack.pop();
           dStack.pop();

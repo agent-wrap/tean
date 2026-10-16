@@ -682,10 +682,22 @@ export class TypeChecker {
     return null;
   }
 
+  private unfoldCache = new ExprMap<Expr>();
+
   private unfoldDefinitionCore(e: Expr): Expr | null {
     if (e.kind === ExprKind.Const) {
       const d = this.isDelta(e);
       if (d !== null) {
+        // The m_unfold cache of the real kernel: level instantiation of a
+        // definition value repeats for the same constant instance.
+        // Measured at 24.5% of magma-list-deep-n21 before this cache.
+        if (e.levels.length > 0) {
+          const cached = this.unfoldCache.get(e);
+          if (cached !== undefined) return cached;
+          const r = instantiateLevelParams(d.value, d.cv.lparams, e.levels);
+          this.unfoldCache.set(e, r);
+          return r;
+        }
         return instantiateLevelParams(d.value, d.cv.lparams, e.levels);
       }
     }

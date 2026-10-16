@@ -1,0 +1,15 @@
+# Draft entry for leanprover/lean-kernel-arena checkers/tean.yaml.
+# The url and rev must point at a published revision of this repository
+# before submission.
+description: |
+  A Lean 4 kernel in TypeScript. Expressions are plain objects with a
+  cached hash, loose-bvar range, and fvar/level-param flags; caches are
+  keyed on structural equality; substitution runs as an explicit-stack
+  machine. Typechecked with `bun check` (tsc, strict, erasable-only
+  syntax); runs under Node for the large stack that deep reductions need.
+version: "0.1.0"
+url: https://github.com/REPLACE-ME/tean
+ref: main
+rev: REPLACE-ME
+build: npm install --omit=dev || true
+run: ./run.sh

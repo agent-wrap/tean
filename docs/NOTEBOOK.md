@@ -128,6 +128,28 @@ Command: `curl results.json` from the arena, then python.
   misses and work repeats. Switched whnf, infer, and defeq caches to
   hash-bucket maps with structural equality, as the kernel's expr_map does.
 
+## 2026-10-15 — One profile, one dead guess, one 2.5x
+
+Command: `node --cpu-prof` on `magma-list-deep-n21`, then a python summary
+of self time. Baseline 10.1 s against 0.16–2.5 s for the native structural
+checkers.
+
+- Profile: 24.5% in a closure at expr.ts:627, 17.5% garbage collector,
+  10.4% exprEq, 9.4% instantiate, ~14% in node constructors.
+- **Dead guess:** the hot `rec` was assumed to be the lift walk inside
+  instantiate. Added a per-(depth, index) lift cache: 10.1 s → 10.6 s.
+  No change. The guess was killed by re-profiling with line numbers:
+  the hot `rec` is `instantiateLevelParams`, line 627, called on every
+  delta unfold.
+- The real kernel caches unfolds per constant instance (`m_unfold` in
+  type_checker.cpp). I had skipped that cache. Adding it:
+  **10.6 s → 4.2 s** on magma-list-deep-n21. Now within 2x of nanobruijn
+  (2.46 s on the arena machine).
+- `discarded-argument-match` went from out-of-memory to **1.4 s** when the
+  whnf, infer, and defeq caches switched from identity keys to structural
+  keys. H1/H2 get a sharper statement: the cache must be structural,
+  because reduction rebuilds equal terms as fresh objects.
+
 ## Hypotheses carried from the deleted build, each unverified
 
 Each one is a hint, not a fact. Status moves only with a measurement in this

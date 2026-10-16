@@ -5,12 +5,15 @@
  *
  * Exit code 0: every declaration checked. Nonzero: a declaration failed.
  */
-import { ExportParser } from "./export/parser.ts";
+import { ExportParser, ParseError } from "./export/parser.ts";
+import { KernelError } from "./kernel/env.ts";
 import { Checker } from "./checker.ts";
 
 interface Failure {
   decl: string;
   error: string;
+  /** true: the kernel refused the proof. false: the checker itself broke. */
+  refusal: boolean;
 }
 
 export interface CheckResult {
@@ -35,7 +38,11 @@ export async function checkFile(path: string, keepGoing: boolean): Promise<Check
     try {
       decl = parser.processLine(line);
     } catch (err) {
-      failures.push({ decl: `<line ${lineNo}>`, error: err instanceof Error ? err.message : String(err) });
+      failures.push({
+        decl: `<line ${lineNo}>`,
+        error: err instanceof Error ? err.message : String(err),
+        refusal: err instanceof ParseError,
+      });
       if (!keepGoing) break;
       continue;
     }
@@ -45,7 +52,11 @@ export async function checkFile(path: string, keepGoing: boolean): Promise<Check
     try {
       checker.addDecl(decl);
     } catch (err) {
-      failures.push({ decl: declName, error: err instanceof Error ? err.message : String(err) });
+      failures.push({
+        decl: declName,
+        error: err instanceof Error ? err.message : String(err),
+        refusal: err instanceof KernelError || err instanceof ParseError,
+      });
       if (!keepGoing) break;
     }
   }
@@ -69,7 +80,8 @@ async function main(): Promise<void> {
     for (const f of result.failures) {
       console.error(`FAIL ${f.decl}: ${f.error}`);
     }
-    process.exit(1);
+    // Arena convention: 1 = proof rejected, >2 = a bug in the checker.
+    process.exit(result.failures.every((f) => f.refusal) ? 1 : 3);
   }
 }
 
