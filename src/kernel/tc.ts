@@ -80,6 +80,11 @@ export const quotMkName = quotName.str("mk");
 export const quotLiftName = quotName.str("lift");
 export const quotIndName = quotName.str("ind");
 
+const natBinOps: ReadonlySet<Name> = new Set([
+  natAdd, natSub, natMul, natPow, natGcd, natMod, natDiv,
+  natLand, natLor, natXor, natShiftLeft, natShiftRight,
+]);
+
 const mkBoolTrue = () => new Const(boolTrue, []);
 const mkBoolFalse = () => new Const(boolFalse, []);
 
@@ -273,6 +278,44 @@ class ExprPairSet {
     bucket.push({ a, b });
   }
 }
+
+// TEAN_DEBUG_CHURN=1: count whnfCore calls by head constant and dump the
+// top counts periodically, with one sample term per head. A sync print is
+// the only probe that works while a declaration blocks the event loop.
+// This found the Nat.beq unary-descent hang on the init corpus
+// (docs/NOTEBOOK.md 2026-10-16).
+const debugChurn =
+  process.env["TEAN_DEBUG_CHURN"] === "1"
+    ? new (class {
+        private counts = new Map<string, number>();
+        private samples = new Map<string, string>();
+        private n = 0;
+        tick(e: Expr): void {
+          const h = getAppFn(e);
+          const key =
+            h.kind === ExprKind.Const
+              ? h.name.toString()
+              : h.kind === ExprKind.Lam
+                ? "(lam)"
+                : h.kind === ExprKind.Proj
+                  ? `proj:${h.structName.toString()}`
+                  : `(kind ${h.kind})`;
+          this.counts.set(key, (this.counts.get(key) ?? 0) + 1);
+          if (this.n > 30_000_000 && !this.samples.has(key)) {
+            this.samples.set(key, exprToString(e).slice(0, 350));
+          }
+          if (++this.n % 20_000_000 === 0) {
+            const top = [...this.counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+            console.error(`..churn after ${this.n} whnfCore calls:`);
+            for (const [k, c] of top) {
+              console.error(`    ${c} ${k}`);
+              const sample = this.samples.get(k);
+              if (sample !== undefined) console.error(`      sample: ${sample}`);
+            }
+          }
+        }
+      })()
+    : null;
 
 export class TypeChecker {
   readonly env: Environment;
@@ -581,6 +624,7 @@ export class TypeChecker {
   }
 
   whnfCore(e: Expr, cheapRec = false, cheapProj = false): Expr {
+    if (debugChurn !== null) debugChurn.tick(e);
     switch (e.kind) {
       case ExprKind.BVar:
       case ExprKind.Sort:
@@ -736,50 +780,117 @@ export class TypeChecker {
     return null;
   }
 
-  private reduceBinNatOp(f: (a: bigint, b: bigint) => bigint, e: App, checkSize: boolean): Expr | null {
-    const fn = e.fn as App;
-    const v1 = this.isNatLitExt(this.whnf(fn.arg));
-    if (v1 === null) return null;
-    const v2 = this.isNatLitExt(this.whnf(e.arg));
-    if (v2 === null) return null;
-    const r = f(v1, v2);
-    if (checkSize) checkNatSize(natSizeBytes(r));
-    return new Lit(r);
-  }
-
-  private reducePow(e: App): Expr | null {
-    const fn = e.fn as App;
-    const base = this.isNatLitExt(this.whnf(fn.arg));
-    if (base === null) return null;
-    const exp = this.isNatLitExt(this.whnf(e.arg));
-    if (exp === null) return null;
-    const k = getCountArg(exp, "Nat.pow");
-    if (base > 1n && k !== 0 && natSizeBytes(base) > NAT_MAX_SIZE / k)
-      throw new KernelError("natLimit", "the kernel refused to evaluate `Nat.pow` because the result would exceed the maximum numeral size",
-      );
-    return new Lit(base ** BigInt(k));
-  }
-
-  private reduceShiftLeft(e: App): Expr | null {
-    const fn = e.fn as App;
-    const v = this.isNatLitExt(this.whnf(fn.arg));
-    if (v === null) return null;
-    const shift = this.isNatLitExt(this.whnf(e.arg));
-    if (shift === null) return null;
-    if (v !== 0n) {
-      const k = getCountArg(shift, "Nat.shiftLeft");
-      checkNatSize(natSizeBytes(v) + Math.floor(k / 8) + 1);
+  /** The head of a Nat-valued arithmetic application, or null. */
+  private natOpHead(e: Expr): { op: Name; args: Expr[] } | null {
+    if (e.kind !== ExprKind.App) return null;
+    const nargs = getAppNumArgs(e);
+    if (nargs === 1) {
+      const f = e.fn;
+      if (f.kind === ExprKind.Const && f.name === natSucc && f.levels.length === 0) {
+        return { op: natSucc, args: [e.arg] };
+      }
+      return null;
     }
-    return new Lit(v << shift);
+    if (nargs !== 2) return null;
+    const f = (e.fn as App).fn;
+    if (f.kind !== ExprKind.Const || f.levels.length !== 0) return null;
+    if (natBinOps.has(f.name)) return { op: f.name, args: [(e.fn as App).arg, e.arg] };
+    return null;
   }
 
-  private reduceBinNatPred(f: (a: bigint, b: bigint) => boolean, e: App): Expr | null {
-    const fn = e.fn as App;
-    const v1 = this.isNatLitExt(this.whnf(fn.arg));
-    if (v1 === null) return null;
-    const v2 = this.isNatLitExt(this.whnf(e.arg));
-    if (v2 === null) return null;
-    return f(v1, v2) ? mkBoolTrue() : mkBoolFalse();
+  private applyNatOp(op: Name, a: bigint, b: bigint): bigint {
+    if (op === natAdd) {
+      const r = a + b;
+      checkNatSize(natSizeBytes(r));
+      return r;
+    }
+    if (op === natSub) {
+      const r = a > b ? a - b : 0n;
+      checkNatSize(natSizeBytes(r));
+      return r;
+    }
+    if (op === natMul) {
+      const r = a * b;
+      checkNatSize(natSizeBytes(r));
+      return r;
+    }
+    if (op === natPow) {
+      const k = getCountArg(b, "Nat.pow");
+      if (a > 1n && k !== 0 && natSizeBytes(a) > NAT_MAX_SIZE / k)
+        throw new KernelError("natLimit", "the kernel refused to evaluate `Nat.pow` because the result would exceed the maximum numeral size");
+      return a ** BigInt(k);
+    }
+    if (op === natGcd) return natGcdFn(a, b);
+    if (op === natMod) return b === 0n ? a : a % b;
+    if (op === natDiv) return b === 0n ? 0n : a / b;
+    if (op === natLand) return a & b;
+    if (op === natLor) return a | b;
+    if (op === natXor) return a ^ b;
+    if (op === natShiftLeft) {
+      if (a !== 0n) {
+        const k = getCountArg(b, "Nat.shiftLeft");
+        checkNatSize(natSizeBytes(a) + Math.floor(k / 8) + 1);
+      }
+      return a << b;
+    }
+    if (op === natShiftRight) return b > 0xffffffffn ? 0n : a >> b;
+    throw new KernelError("unreachable", "unknown Nat op in applyNatOp");
+  }
+
+  /**
+   * Evaluate a Nat expression to a literal, walking nested arithmetic with
+   * an explicit stack. The recursive form (reduceNat -> whnf -> reduceNat)
+   * overflowed the JS stack on real input: the init corpus holds literal
+   * arithmetic chains deep enough to exhaust 640k frames
+   * (docs/NOTEBOOK.md 2026-10-16). Non-arithmetic subterms still go
+   * through one whnf call each; only the arithmetic spine is iterative.
+   */
+  private natEvalToLit(e0: Expr): bigint | null {
+    interface VisitFrame {
+      kind: 0;
+      e: Expr;
+      whnfed: boolean;
+    }
+    interface ApplyFrame {
+      kind: 1;
+      op: Name;
+    }
+    const stack: (VisitFrame | ApplyFrame)[] = [{ kind: 0, e: e0, whnfed: false }];
+    const values: bigint[] = [];
+    while (stack.length > 0) {
+      const f = stack.pop()!;
+      if (f.kind === 1) {
+        if (f.op === natSucc) {
+          const a = values.pop()!;
+          const r = a + 1n;
+          checkNatSize(natSizeBytes(r));
+          values.push(r);
+        } else {
+          const b = values.pop()!;
+          const a = values.pop()!;
+          values.push(this.applyNatOp(f.op, a, b));
+        }
+        continue;
+      }
+      const lit = this.isNatLitExt(f.e);
+      if (lit !== null) {
+        values.push(lit);
+        continue;
+      }
+      const arith = this.natOpHead(f.e);
+      if (arith !== null) {
+        stack.push({ kind: 1, op: arith.op });
+        for (let i = arith.args.length - 1; i >= 0; i--) {
+          stack.push({ kind: 0, e: arith.args[i]!, whnfed: false });
+        }
+        continue;
+      }
+      if (f.whnfed) return null; // whnf made no progress toward a literal
+      const w = this.whnf(f.e);
+      if (w === f.e || exprEq(w, f.e)) return null;
+      stack.push({ kind: 0, e: w, whnfed: true });
+    }
+    return values.pop() ?? null;
   }
 
   private reduceNat(e: Expr): Expr | null {
@@ -787,8 +898,7 @@ export class TypeChecker {
     if (nargs === 1) {
       const f = (e as App).fn;
       if (f.kind === ExprKind.Const && f.name === natSucc && f.levels.length === 0) {
-        const arg = this.whnf((e as App).arg);
-        const v = this.isNatLitExt(arg);
+        const v = this.natEvalToLit((e as App).arg);
         if (v === null) return null;
         const r = v + 1n;
         checkNatSize(natSizeBytes(r));
@@ -801,21 +911,20 @@ export class TypeChecker {
     const f = (app.fn as App).fn;
     if (f.kind !== ExprKind.Const || f.levels.length !== 0) return null;
     const n = f.name;
-    if (n === natAdd) return this.reduceBinNatOp((a, b) => a + b, app, true);
-    if (n === natSub) return this.reduceBinNatOp((a, b) => (a > b ? a - b : 0n), app, true);
-    if (n === natMul) return this.reduceBinNatOp((a, b) => a * b, app, true);
-    if (n === natPow) return this.reducePow(app);
-    if (n === natGcd) return this.reduceBinNatOp(natGcdFn, app, false);
-    if (n === natMod) return this.reduceBinNatOp((a, b) => (b === 0n ? a : a % b), app, false);
-    if (n === natDiv) return this.reduceBinNatOp((a, b) => (b === 0n ? 0n : a / b), app, false);
-    if (n === natBeq) return this.reduceBinNatPred((a, b) => a === b, app);
-    if (n === natBle) return this.reduceBinNatPred((a, b) => a <= b, app);
-    if (n === natLand) return this.reduceBinNatOp((a, b) => a & b, app, false);
-    if (n === natLor) return this.reduceBinNatOp((a, b) => a | b, app, false);
-    if (n === natXor) return this.reduceBinNatOp((a, b) => a ^ b, app, false);
-    if (n === natShiftLeft) return this.reduceShiftLeft(app);
-    if (n === natShiftRight) return this.reduceBinNatOp((a, b) => (b > 0xffffffffn ? 0n : a >> b), app, false);
-    return null;
+    if (n === natBeq || n === natBle) {
+      const v1 = this.natEvalToLit((app.fn as App).arg);
+      if (v1 === null) return null;
+      const v2 = this.natEvalToLit(app.arg);
+      if (v2 === null) return null;
+      const r = n === natBeq ? v1 === v2 : v1 <= v2;
+      return r ? mkBoolTrue() : mkBoolFalse();
+    }
+    if (!natBinOps.has(n)) return null;
+    const v1 = this.natEvalToLit((app.fn as App).arg);
+    if (v1 === null) return null;
+    const v2 = this.natEvalToLit(app.arg);
+    if (v2 === null) return null;
+    return new Lit(this.applyNatOp(n, v1, v2));
   }
 
   // -- recursor reduction (iota, quot, K) -----------------------------------
@@ -1174,7 +1283,15 @@ export class TypeChecker {
       const r = this.isDefEqOffset(tn, sn);
       if (r !== Lbool.Undef) return { t: tn, s: sn, result: r };
 
-      if (!tn.hasFVar && !sn.hasFVar) {
+      // The C++ kernel gates this on `!has_fvar` for both sides, as a cost
+      // guard. That gate is SYNTACTIC: a let-bound fvar makes hasFVar true
+      // while the term is definitionally closed, and skipping reduceNat
+      // here sends `Nat.beq` into its unary `._f` form — measured at
+      // ~4.3e9 reduction steps on Char.ofOrdinal._proof_3 in the real
+      // `init` corpus (docs/NOTEBOOK.md 2026-10-16). reduceNat is sound
+      // with fvars present: it returns null unless both arguments whnf to
+      // literals. EXPERIMENT: run it ungated; the arena suite judges.
+      {
         const tV = this.reduceNat(tn);
         if (tV !== null) return { t: tn, s: sn, result: toLbool(this.isDefEqCore(tV, sn)) };
         const sV = this.reduceNat(sn);

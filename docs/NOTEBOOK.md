@@ -335,6 +335,89 @@ think-aloud sessions and the posttest against the PLAN.md bar are
 uncollected. Chapters 1–7 hold the language rules (no Lean syntax, no
 repo pointers) in prose; the gate apparatus lives in HTML comments.
 
+## 2026-10-16 — The real corpora: built, not downloaded
+
+Asked: can we check real-world Lean proofs beyond the 199-test tarball?
+
+- The hosted arena has 8 real-world corpora: init (331.5 MB), std
+  (569 MB), con-leche (526 MB), cedar (832 MB), navier-stokes-euler
+  (1.5 GB), cslib (2.3 GB), mathlib (5.8 GB), plus init-prelude. They are
+  NOT downloadable: `lka.py` caches builds locally only (`cache_key` in
+  results.json is a local cache key).
+- Built init and std ourselves: elan toolchain v4.34.1 (the exact githash
+  this kernel is ported against), lean4export master pinned to that
+  toolchain, scaffold projects with `import Init` / `import Std`, exactly
+  as `lka.py` does for leanfile tests. Export took 13 s and 20 s.
+- Verification against the arena metadata: init 347,555,345 bytes /
+  6,487,065 lines; std 596,655,086 bytes / 10,826,639 lines — both match
+  the published size and line counts.
+- Also built the arena's `official` checker (the C++ kernel behind an
+  ndjson reader) on this machine, as the differential oracle.
+
+Engineering the corpora forced:
+- Streaming line reader in checkFile: std at 569 MB exceeds V8's maximum
+  string length (~512 MiB), so `readFile` into one string cannot work.
+- The failure-ranking tool from the original plan (`--keep-going` now
+  attributes `unknownConstant` cascades to their roots and ranks roots by
+  blocked count).
+- A per-declaration trace mode (`TEAN_TRACE_FROM`): a hang must name its
+  declaration, and an after-the-fact timer cannot, because a checking
+  declaration blocks the event loop.
+- A whnfCore churn profiler (`TEAN_DEBUG_CHURN`): counts reductions by
+  head constant with sample terms, printable mid-hang.
+
+## 2026-10-16 — init: found two algorithmic bugs, then a full pass
+
+First run on init hung after 20,140 declarations (26 s of progress, then
+forever). The tools above named everything:
+
+- **Bug 1: the fvar gate starved the Nat fast path.** The hang was
+  `Char.ofOrdinal._proof_3` (a `grind` arithmetic certificate). Churn:
+  millions of `Nat.rec`/`Nat.beq._f` steps descending from ~2^32 — the
+  kernel evaluating `Nat.beq` by unary recursion, four billion steps. The
+  C++ kernel gates `reduce_nat` inside lazy delta on `!has_fvar` for BOTH
+  sides; let-bound fvars are syntactically fvars while definitionally
+  closed, so the gate starved the literal fast path and `Nat.beq`
+  delta-unfolded into its `._f` form. Fix: run reduceNat ungated in the
+  lazy-delta loop (sound: it returns null unless both arguments evaluate
+  to literals). A deliberate, documented deviation from the C++ code.
+  Repro went from non-terminating to 5 s.
+- **Bug 2: recursive literal arithmetic overflowed the stack.** Six
+  `Int32/Int64/ISize instRxcHasSize_eq` lemmas died at "Maximum call
+  stack size exceeded": the mutual recursion reduceNat → whnf → reduceNat
+  through deep nested-arithmetic chains. Fix: `natEvalToLit`, an
+  explicit-stack evaluator for the arithmetic spine; only non-arithmetic
+  boundaries still cost a JS frame.
+- **Result: init passes whole.** 59,623 declarations accepted.
+  Ours: **22.2 s**. The official C++ kernel, same machine, same file:
+  **35.1 s**. (Arena-machine official time: 54.6 s.) We are faster than
+  the official kernel on this corpus on this machine.
+- Worker stack: a Node worker with `resourceLimits.stackSizeMb: 2000`
+  measured **21,842,852 frames**, 34x the macOS main-thread maximum.
+  run.sh now uses it (`TEAN_WORKER_STACK_MB`).
+
+## 2026-10-16 — std: 99.99% and an honestly ranked open root
+
+- std under keep-going: **104,050 of 104,056 declarations pass**. The 6
+  failures are the same SInt range-lemma family, which passes in init but
+  times out in std's context; with the 2 GB worker stack the overflow
+  became a >600 s computation, so the root is algorithmic, not depth.
+- Total std time 13.5 min vs official 60 s on this machine: ~13x. Churn
+  profiling attributes the bulk to SYMBOLIC evaluation inside
+  `Std.Tactic.BVDecide` proofs: tens of millions of whnfCore steps
+  unfolding `DHashMap.Internal.Raw₀.insert` over free variables. The
+  official kernel resolves those comparisons without this unfolding.
+  That divergence is the top-ranked open root. The ranking, the churn
+  dumps, and the repro prefix are preserved; the hunt continues from
+  there, not from scratch.
+- Regression gates after both kernel changes: local arena **199/199**,
+  magma-list-deep-n21 3.48 s, init-prelude 0.295 s — all within noise.
+
+Method note, kept for the book: every step of this day used the same
+loop — heartbeat to find the declaration, churn counter to find the
+constant, stack probe to find the call path, then one measured fix. No
+fix went in without a number before and after.
+
 ## Open questions
 
 - ~~What is the arena submission interface?~~ Answered: a PR to
@@ -347,8 +430,13 @@ repo pointers) in prose; the gate apparatus lives in HTML comments.
 - Why does magma-list-deep-n36 need more than 16 GB here and less than
   10 GB elsewhere? Suspect: bytes per expression node in JS. Measure with
   a heap profile before changing the representation.
-- The hosted corpora (init, std, mathlib) are not local. Build the export
-  of `std` with elan + lean4export, measure, and rank what fails.
+- ~~The hosted corpora are not local.~~ Done 2026-10-16: init and std
+  built and measured. init passes whole; std has one ranked open root
+  (symbolic BVDecide evaluation, plus the SInt lemma family). Next
+  corpora by size: con-leche (needs Lean 4.33), cedar, then mathlib.
+- Why does the official kernel avoid the symbolic `DHashMap.insert`
+  unfolding that costs us 13x on std? Read the C++ lazy-delta path once
+  more against a captured defeq pair from the BVDecide churn.
 - H8 and the "level shape in the hash" half of H2 still need measurements.
 - The book's reader evidence: three to five think-aloud sessions, the
   posttest against the bar in PLAN.md, an independent fact check, and one
