@@ -11,13 +11,15 @@
     "check:types-coverage": "type-coverage --strict --at-least 98.5",
     "check:dead-code": "knip",
     "check:suppressions": "./scripts/check-suppressions.sh",
-    "verify": "bun check && bun run lint && bun test && bun run check:types-coverage && bun run check:dead-code && bun run check:suppressions",
+    "book:gates": "bun run scripts/book-gates.ts",
+    "verify": "bun check && bun run lint && bun test && bun run check:types-coverage && bun run check:dead-code && bun run check:suppressions && bun run book:gates",
     "check:mutation": "stryker run"
   },
   "devDependencies": {
     "@stryker-mutator/core": "^10.0.0",
     "@types/bun": "latest",
     "eslint": "^10.12.0",
+    "fast-check": "^4.10.2",
     "jiti": "^2.7.0",
     "knip": "^6.41.0",
     "type-coverage": "^2.30.4",

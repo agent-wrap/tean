@@ -12,6 +12,7 @@ import {
 import { TypeChecker } from "./kernel/tc.ts";
 import { addInductive, type InductiveDecl, type InductiveType } from "./kernel/inductive.ts";
 import { addQuot, checkExportedQuot } from "./kernel/quot.ts";
+import { isWeakened } from "./kernel/weaken.ts";
 import { ParseError } from "./export/parser.ts";
 import type { ExpDecl, ExpInductive } from "./export/parser.ts";
 import { type Result, ok, err } from "./result.ts";
@@ -90,7 +91,9 @@ export class Checker {
         const cv = { name: d.name, lparams: d.levelParams, type: d.type };
         const tc = new TypeChecker(this.env, "safe");
         this.checkConstantVal(cv, tc);
-        if (!tc.isProp(d.type)) throw new KernelError("typeMismatch", `theorem '${d.name}': type is not a proposition`);
+        // [R: WF-THM-PROP] weakened only by the forgery gate.
+        if (!isWeakened("WF-THM-PROP") && !tc.isProp(d.type))
+          throw new KernelError("typeMismatch", `theorem '${d.name}': type is not a proposition`);
         const valType = tc.check(d.value, d.levelParams);
         if (!tc.isDefEq(valType, d.type))
           throw new KernelError("typeMismatch", `theorem '${d.name}': value type does not match declared type`);
@@ -145,6 +148,27 @@ export class Checker {
 
     // Derive everything ourselves. This also installs the declarations.
     addInductive(this.env, decl);
+
+    // [R: WF-REC-DERIVE] weakened only by the forgery gate: trust the
+    // exported recursors instead of comparing against the derived ones.
+    // This is the historical attack surface that 073_BogusRecursor targets.
+    if (isWeakened("WF-REC-DERIVE")) {
+      for (const r of d.recs) {
+        this.env.addCore({
+          kind: "rec",
+          cv: { name: r.name, lparams: r.levelParams, type: r.type },
+          all: r.all,
+          numParams: r.numParams,
+          numIndices: r.numIndices,
+          numMotives: r.numMotives,
+          numMinors: r.numMinors,
+          rules: r.rules,
+          k: r.k,
+          isUnsafe: r.isUnsafe,
+        });
+      }
+      return;
+    }
 
     // Now compare the derived declarations against the exported metadata.
     const mismatch = (what: string, n: Name): never => {

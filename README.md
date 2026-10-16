@@ -43,8 +43,24 @@ see the latest entry in `docs/NOTEBOOK.md` and
 
 ## The book
 
-The project carries a second deliverable: a book on building a Lean proof
-checker from scratch, written from the notebook once the record exists.
-The plan and the gates are in `docs/PLAN.md`. Chapters do not exist yet,
-on purpose: the rule is that no chapter describes work that has not
-happened.
+The second deliverable: twelve chapters on building a Lean proof checker
+from scratch, for a TypeScript developer who has never met a proof
+assistant. Start at `book/ch01.md`; the front door is `book/README.md`.
+
+The book is a verified correspondence, not a parallel text. Its spine is
+`book/rules.json`: every formal rule cites the thesis (Carneiro), the
+Lean 4 kernel source, and this checker's code, by anchors a CI gate
+resolves mechanically (`scripts/book-gates.ts`). Soundness rules carry
+forgeries: `tests/forgery.test.ts` shows each one refused by the normal
+kernel and accepted by a kernel with exactly that rule disabled
+(`src/kernel/weaken.ts`). Every `Try it` block in a chapter is a real
+file under `book/tryit/`, typechecked, executed in CI, and diffed against
+the printed output in the text.
+
+```sh
+./scripts/fetch-vendor-sources.sh   # fresh clone: fetch cited raw sources
+bun run book:gates                  # run all book gates
+```
+
+The reader-facing evidence (think-aloud sessions, the posttest in
+`docs/PLAN.md`) is still open; the notebook tracks it.

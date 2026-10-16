@@ -1,0 +1,43 @@
+{
+  "comment": [
+    "The forward-reference gate: each technical term names the chapter",
+    "that defines it. scripts/book-gates.ts fails the build when a term's",
+    "first occurrence in reading order lands before its defining chapter.",
+    "Matching is case-insensitive on word boundaries, over the chapters'",
+    "full text including code fences."
+  ],
+  "terms": {
+    "kernel": 1,
+    "environment": 1,
+    "declaration": 1,
+    "de Bruijn": 2,
+    "bound variable": 2,
+    "free variable": 2,
+    "alpha-equivalence": 2,
+    "universe ladder": 3,
+    "impredicativ": 3,
+    "weak head normal form": 4,
+    "whnf": 4,
+    "beta": 4,
+    "delta": 4,
+    "zeta": 4,
+    "definitionally equal": 5,
+    "definitional equality": 5,
+    "proof irrelevance": 5,
+    "conversion rule": 5,
+    "eta": 5,
+    "inductive type": 6,
+    "positivity": 6,
+    "subsingleton": 6,
+    "projection": 6,
+    "recursor": 7,
+    "motive": 7,
+    "minor premise": 7,
+    "major premise": 7,
+    "iota": 7,
+    "K-like": 7,
+    "quotient": 7,
+    "NDJSON": 8,
+    "lean4export": 8
+  }
+}

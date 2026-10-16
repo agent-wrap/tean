@@ -279,6 +279,62 @@ lesson for the method: replay a bug with a reversible stash or patch,
 never with checkout against a dirty tree, and run the full verify gate
 immediately before the commit, not after.
 
+## 2026-10-16 — The book exists, as a verified correspondence
+
+The brief, after one deepening pass: not a parallel text (code next to
+math) but a proved map between them. Chapters cite rules; a registry
+(`book/rules.json`, 37 rules) maps each rule to a literal anchor in the
+vendored thesis LaTeX, a symbol in the vendored Lean 4 kernel source at
+githash 5045d005, and a symbol in `src/`. `scripts/book-gates.ts` fails
+CI when any citation breaks, in either direction. Soundness rules carry
+forgeries; every `Try it` is a real file, typechecked, executed, and
+diffed against the printed output in the chapter.
+
+What was built: 12 chapters (`book/ch01..ch12.md`, cap 250 lines held,
+ch05 lands exactly on 250), 12 runnable exercises (`book/tryit/`), 5
+forgery pairs (`tests/forgery.test.ts` + `src/kernel/weaken.ts`), 4
+fast-check properties (`tests/prop.test.ts`), 7 CI gates, and
+`scripts/fetch-vendor-sources.sh` (vendor/ stays uncommitted; CI fetches
+the cited files at pinned revisions).
+
+Measurements of the day, each with the command:
+
+- `bun test tests/forgery.test.ts`, first run: **6/10**. The finding
+  that forced a design decision: tean refuses the inductive-family
+  forgeries TWICE — once by the named rule, once by derive-and-compare
+  (`exportMismatch`). With only the named rule off, the net still
+  refuses. Decision, recorded in the test and in `book/forgeries/README.md`:
+  the weakened runs for WF-IND-POS and WF-IND-UNIV also set
+  WF-REC-DERIVE (trust the export), which is the posture the historical
+  attacks assumed. Second finding: `bad/bugs/rec-k-lie` is a
+  WF-REC-DERIVE forgery, not a K-guard forgery — its `k: true` lie dies
+  in the compare. The true K-guard forgery is `100_ruleKbad`
+  (`typeMismatch`). The attack-surface map is now explicit: which net
+  catches which forgery class.
+- `bun run scripts/book-gates.ts`, first run: **4 real failures**. The
+  wrap-aware reference scan missed next-chapter titles broken across
+  quote-block lines (`"> "` markers) — the gate now strips them; and two
+  files cited the flag RED-K-GUARD as if it were a rule id. The gates
+  paid for themselves before the first commit that carries them.
+- `bun run verify`: green end to end. 36 tests, type-coverage **98.74%**
+  (floor 98.5), knip clean, zero suppressions, book gates
+  12 chapters / 37 rules / 32 terms.
+- `bun run scripts/arena.ts --timeout 240 --jobs 6 --exclude
+  magma-list-deep-n36` after the weaken-flag branches went into four
+  kernel sites: **198/198** (good 126/126, bad 72/72).
+  magma-list-pair-n21 at 43.8 s, app-lam at 8.8 s — within the noise of
+  the 2026-10-15 numbers. The flags cost nothing measurable.
+
+Vendored for citations: Carneiro's thesis LaTeX
+(github.com/digama0/lean-type-theory, master) next to the six cited
+kernel C++ files. The registry's thesis anchors are literal substrings
+of the .tex files, so the gate greps them mechanically.
+
+What the book does NOT claim, in print (ch12): reader evidence. The
+think-aloud sessions and the posttest against the PLAN.md bar are
+uncollected. Chapters 1–7 hold the language rules (no Lean syntax, no
+repo pointers) in prose; the gate apparatus lives in HTML comments.
+
 ## Open questions
 
 - ~~What is the arena submission interface?~~ Answered: a PR to
@@ -294,3 +350,6 @@ immediately before the commit, not after.
 - The hosted corpora (init, std, mathlib) are not local. Build the export
   of `std` with elan + lean4export, measure, and rank what fails.
 - H8 and the "level shape in the hash" half of H2 still need measurements.
+- The book's reader evidence: three to five think-aloud sessions, the
+  posttest against the bar in PLAN.md, an independent fact check, and one
+  non-programmer reader for chapters 1–3. None collected as of 2026-10-16.

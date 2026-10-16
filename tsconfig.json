@@ -46,5 +46,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["src", "tests", "scripts", "eslint.config.ts"]
+  "include": ["src", "tests", "scripts", "book/tryit", "eslint.config.ts"]
 }

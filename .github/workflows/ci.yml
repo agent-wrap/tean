@@ -10,8 +10,13 @@ jobs:
         with:
           node-version: "26"
       - run: bun install
-      # typecheck, lint (zero warnings), tests, type-coverage ratchet,
-      # dead-code check, suppression policy
+      # The book's rule registry cites vendored raw sources (Lean 4 kernel
+      # at the export githash, Carneiro's thesis LaTeX). vendor/ is not
+      # committed; fetch the cited files at pinned revisions.
+      - run: ./scripts/fetch-vendor-sources.sh
+      # typecheck, lint (zero warnings), tests (incl. forgery gate and
+      # property tests), type-coverage ratchet, dead-code check,
+      # suppression policy, book gates
       - run: bun run verify
       - name: fetch arena test suite
         run: |

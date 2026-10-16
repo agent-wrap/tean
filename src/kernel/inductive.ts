@@ -38,6 +38,7 @@ import {
 import { KernelError } from "./error.ts";
 import { Environment, checkDuplicatedUnivParams, type Decl, type RecRule} from "./env.ts";
 import { TypeChecker, LocalCtx } from "./tc.ts";
+import { isWeakened } from "./weaken.ts";
 
 interface Constructor {
   name: Name;
@@ -436,11 +437,13 @@ class AddInductiveFn {
             t = instantiate1(t.body, this.params[i]!);
           } else {
             const s = this.tc().ensureType(t.type);
-            if (!(isGeq(this.resultLevel, s.level) || normalizesToZero(this.resultLevel))) {
+            // [R: WF-IND-UNIV] weakened only by the forgery gate.
+            if (!(isGeq(this.resultLevel, s.level) || normalizesToZero(this.resultLevel)) && !isWeakened("WF-IND-UNIV")) {
               throw new KernelError("universe", `universe level of type_of(arg #${i + 1}) of '${n}' is too big for the corresponding inductive datatype`,
               );
             }
-            if (!this.isUnsafe) this.checkPositivity(t.type, n, i);
+            // [R: WF-IND-POS] weakened only by the forgery gate.
+            if (!this.isUnsafe && !isWeakened("WF-IND-POS")) this.checkPositivity(t.type, n, i);
             const local = this.mkLocalDeclFor(t);
             t = instantiate1(t.body, local);
           }

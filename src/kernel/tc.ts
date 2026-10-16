@@ -43,6 +43,7 @@ import {
 import { KernelError } from "./error.ts";
 import {
   Environment, type Decl, type DefinitionSafety, type RecVal, type Hints, compareHints, declHasValue, declIsUnsafe, recMajorIdx, isNonRecStructure, } from "./env.ts";
+import { isWeakened } from "./weaken.ts";
 
 // ---------------------------------------------------------------------------
 // Known names
@@ -890,7 +891,8 @@ export class TypeChecker {
     const newCnstrApp = this.mkNullaryCnstr(appType, rval.numParams);
     if (newCnstrApp === null) return e;
     const newType = this.inferType(newCnstrApp);
-    if (!this.isDefEq(appType, newType)) return e;
+    // [R: RED-K] the guard; weakened only by the forgery gate (flag RED-K-GUARD).
+    if (!isWeakened("RED-K-GUARD") && !this.isDefEq(appType, newType)) return e;
     return newCnstrApp;
   }
 
