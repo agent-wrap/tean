@@ -155,23 +155,47 @@ checkers.
 Each one is a hint, not a fact. Status moves only with a measurement in this
 file.
 
-| # | Hypothesis | Status | Measurement that settles it |
+| # | Hypothesis | Status 2026-10-15 | Evidence |
 |---|---|---|---|
-| H1 | Cache per node: loose bvar range, node count, hash | unverified | time full arena run with and without |
-| H2 | Hash must ignore binder names and level shape | unverified | defeq cache hit rate and wrong-hit count |
-| H3 | Proof irrelevance must be three-valued | unverified | a prelude declaration that loops with two-valued |
-| H4 | Beta must discharge the whole spine in one pass | unverified | time on beta-heavy tests, one pass vs per-arg |
-| H5 | Never put a constructor in the computed-ops table | unverified | a term that loops lit↔ctor |
-| H6 | A recursor must be verified, or a forgery proves False | unverified | arena bad test 073_BogusRecursor |
-| H7 | String in recent Lean is a byte array with a proof | unverified | grep the prelude export for String.mk |
-| H8 | Cheap test before expensive test in defeq | unverified | profile of defeq on the prelude |
-| H9 | Hash-consing is slower despite high duplicate rate | unverified | not planned unless perf demands it |
-| H10 | Deep recursion needs a big stack; read exit code, not clock | unverified | bad/perf and good/perf tests |
-| H11 | Rank failures by blocked count, not by frequency | unverified | the failure ranking tool on first prelude run |
+| H1 | Cache per node: loose bvar range, node count, hash | revised and confirmed | loose range and hash are load-bearing. Node count never needed yet. The sharper fact: caches must key on STRUCTURE, not identity (discarded-argument-match: OOM → 1.4 s) |
+| H2 | Hash must ignore binder names and level shape | confirmed for names and infos | expr_eq_fn<false> in the kernel source ignores binder names and infos, so the hash does too. "Level shape" part still unverified |
+| H3 | Proof irrelevance must be three-valued | revised | the kernel source returns definitive false when the first term is a proof and the types differ. Three-valued, but not the shape the seed described. No loop observed |
+| H4 | Beta must discharge the whole spine in one pass | confirmed in source | whnf_core instantiates m arguments in one call. Cost difference not measured |
+| H5 | Never put a constructor in the computed-ops table | held by construction | reduce_nat and nat_lit_to_constructor ported as-is; tutorial iota tests pass. No loop reproduced |
+| H6 | A recursor must be verified, or a forgery proves False | confirmed | derive-and-compare refuses 073_BogusRecursor and 136_misnamed_rec_user |
+| H7 | String is not a list of characters anymore | confirmed, new form | the kernel's string rule targets `String.ofList`, not `String.mk`. Read in type_checker.cpp at the export's githash |
+| H8 | Cheap test before expensive test in defeq | unverified | needs a defeq profile on a large corpus |
+| H9 | Hash-consing is slower despite high duplicate rate | untested | structural cache maps gave the sharing benefit without consing |
+| H10 | Deep recursion needs a big stack; read exit code, not clock | confirmed, sharper | input terms are shallow (church-numerals: depth 128 in the file, 14,520 under reduction). Bun pins ~8 MB; Node + ulimit + --stack-size gives 639,753 frames |
+| H11 | Rank failures by blocked count, not by frequency | confirmed | one underscore in `append_after` blocked 46 of 47 good failures |
+
+## 2026-10-15 — End of day one: 199/199 on the local suite
+
+Command: `bun run scripts/arena.ts --timeout 240 --jobs 6
+--out docs/measurements/arena-2026-10-15.json`.
+
+- **199/199. good 127/127, bad 72/72.**
+- Slowest: magma-list-deep-n36 at 111 s with a 48 GB Node heap (it aborts
+  at 16 GB). Other checkers pass it in 2.2–35 s within 10 GB. Memory per
+  node is the open problem, not the algorithm.
+- magma-list-pair-n21 at 50 s is the next perf target.
+- init-prelude (64,110 lines) checks in 0.3 s.
+- The hosted arena holds 234 tests. The extra ones are the big real-world
+  corpora (init, std, mathlib), not in the downloadable tarball. The top
+  score there is 208/234. Nobody holds 234.
 
 ## Open questions
 
-- What is the arena submission interface for an external checker? The README
-  mentions `checkers/*.yaml`. Read the full README before the submission.
-- What do `bad/perf` tests expect: a refusal, or survival within a budget?
-  Read one before the first full run.
+- ~~What is the arena submission interface?~~ Answered: a PR to
+  leanprover/lean-kernel-arena adding `checkers/tean.yaml` that points at a
+  public git revision. Exit codes: 0 accept, 1 reject, 2 decline, else bug.
+  Draft in `checker.yaml`. The repository must be published first.
+- ~~What do `bad/perf` tests expect?~~ Answered: a refusal. They target the
+  kernel's own resource bounds (the 128 MB Nat limit), and the ported
+  bounds refuse them.
+- Why does magma-list-deep-n36 need more than 16 GB here and less than
+  10 GB elsewhere? Suspect: bytes per expression node in JS. Measure with
+  a heap profile before changing the representation.
+- The hosted corpora (init, std, mathlib) are not local. Build the export
+  of `std` with elan + lean4export, measure, and rank what fails.
+- H8 and the "level shape in the hash" half of H2 still need measurements.

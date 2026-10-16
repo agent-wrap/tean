@@ -37,7 +37,7 @@ async function runOne(file: string, expected: "good" | "bad", timeoutSec: number
   // fixed 8 MB stack that Bun gives (measured; see docs/NOTEBOOK.md).
   const mainPath = join(import.meta.dir, "..", "src", "main.ts");
   const proc = Bun.spawn(
-    ["bash", "-c", `ulimit -s 65520; exec node --stack-size=60000 --max-old-space-size=16000 "${mainPath}" --quiet "${file}"`],
+    ["bash", "-c", `ulimit -s 65520; exec node --stack-size=60000 --max-old-space-size=49152 "${mainPath}" --quiet "${file}"`],
     {
       stdout: "pipe",
       stderr: "pipe",
@@ -72,11 +72,19 @@ async function main(): Promise<void> {
   const timeoutSec = Number(getFlag("timeout", "60"));
   const jobs = Number(getFlag("jobs", "8"));
   const outPath = getFlag("out", "");
+  // Comma-separated substrings of test paths to skip. Skips print, so a
+  // bounded run never reads as full coverage.
+  const exclude = getFlag("exclude", "").split(",").filter((s) => s !== "");
 
-  const tasks: Array<{ file: string; expected: "good" | "bad" }> = [
+  let tasks: Array<{ file: string; expected: "good" | "bad" }> = [
     ...collect(join(dir, "good")).map((f) => ({ file: f, expected: "good" as const })),
     ...collect(join(dir, "bad")).map((f) => ({ file: f, expected: "bad" as const })),
   ];
+  if (exclude.length > 0) {
+    const skipped = tasks.filter((t) => exclude.some((x) => t.file.includes(x)));
+    tasks = tasks.filter((t) => !exclude.some((x) => t.file.includes(x)));
+    for (const s of skipped) console.log(`SKIP ${s.file} (excluded)`);
+  }
 
   const results: TestResult[] = [];
   let next = 0;

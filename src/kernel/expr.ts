@@ -33,10 +33,7 @@ function mix(h1: number, h2: number): number {
   return (h ^ (h >>> 13)) | 0;
 }
 
-let nextExprId = 0;
-
 abstract class ExprBase {
-  readonly id: number = nextExprId++;
   abstract readonly kind: ExprKind;
   abstract readonly hash: number;
   /** Smallest `n` such that all loose bvars have index < n. */

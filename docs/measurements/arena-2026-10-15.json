@@ -1,0 +1,1597 @@
+{
+  "date": "2026-10-16T04:48:15.310Z",
+  "results": [
+    {
+      "file": "vendor/bad/bugs/constlevels.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 121.16187499999978,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/ctor-num-fields.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 125.45845800000097,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/eta-ctor-alias.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 123.43883299999925,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/k-rec-conv.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 125.20654099999956,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/large-elim-param.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 120.18333399999938,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/large-elim-prop-bool.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 122.9831669999985,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/level-imax-leq.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 119.30729099999917,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/level-imax-normalization.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 110.36266699999942,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/nat-rec-k-lie.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 115.8817080000008,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/nat-rec-rules.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 115.47441699999945,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/nested-unused-param.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 128.22554200000013,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/orphan-rec.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 116.58166699999856,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/proj-non-structure.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 125.53212499999972,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/proj-of-imax-prop.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 130.6447079999998,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/proj-of-stuck-prop.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 148.77254100000027,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/proj-of-subst-prop.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 147.14195800000016,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/rec-k-lie.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 106.52399999999943,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/rec-missing-ih.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 150.76683299999968,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/bugs/rec-of-subst-prop.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 144.9467910000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/other/extra-rec.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 118.38395800000035,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/other/nat-lit-add-bad.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 123.97970799999894,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/other/orphan-ctor.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 116.84070799999972,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/other/proj-of-prop.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 119.10750000000007,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/perf/refute-cheap-first.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 121.67670899999939,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/perf/refute-cheap-last.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 280.09066599999824,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/002_badDef.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 115.20708399999967,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/009_forallSortBad.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 113.83100000000013,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/010_nonTypeType.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 114.74049999999988,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/011_nonTypeAxiom.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 118.77741600000081,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/012_nonPropThm.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 121.69704199999978,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/014_selfProof.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 112.56987500000105,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/019_tut06_bad01.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 119.83324999999968,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/046_inductBadNonSort.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 122.5483750000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/047_inductBadNonSort2.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 117.27679200000057,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/048_inductLevelParam.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 107.85712500000045,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/049_inductTooFewParams.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 122.88425000000097,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/050_inductWrongCtorParams.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 120.4270000000015,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/051_inductWrongCtorResParams.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 114.95983299999898,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/052_inductWrongCtorResLevel.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 113.36904200000026,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/053_inductInIndex.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 125.72091700000055,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/054_indNeg.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 123.17041699999936,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/056_reduceCtorType.mk.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 128.40079200000037,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/057_indNegReducible.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 129.2123329999995,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/061_typeWithTooHighTypeField.mk.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 115.76279199999954,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/073_BogusRecursor.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 121.78329200000007,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/087_projOutOfRange.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 124.101541,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/088_projNotStruct.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 121.22858400000041,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/090_projProp2.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 126.19391700000051,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/092_projProp4.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 122.24466599999869,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/093_projProp5.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 120.61129099999926,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/094_projProp6.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 117.14966699999968,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/096_projIndexData.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 128.6441250000007,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/097_projIndexData2.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 126.0267500000009,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/100_ruleKbad.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 129.433500000001,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/101_ruleKAcc.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 122.75416700000096,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/105_proofIrrelevanceBad.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 125.36645800000042,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/111_indexedUnitEta.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 132.29891700000007,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/113_indexedStructEta.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 129.63129200000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/116_funEtaBad.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 120.62358299999869,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/117_reflOccLeft.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 124.0463749999999,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/118_reflOccInIndex.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 128.67529099999956,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/125_accRecNoEta.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 121.06662499999948,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/132_dup_defs.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 117.81883299999936,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/133_dup_ind_def.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 120.55645800000093,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/134_dup_ctor_def.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 117.55149999999958,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/135_dup_rec_def.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 124.91424999999981,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/136_misnamed_rec_user.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 126.36879200000112,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/137_dup_rec_def2.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 119.16437500000029,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/138_dup_ctor_rec.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 116.48004200000105,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/139_DupConCon.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 118.46262500000012,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/140_falseFromUnsafe.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 113.81345800000054,
+      "note": ""
+    },
+    {
+      "file": "vendor/bad/tutorial/141_falseFromPartial.ndjson",
+      "expected": "bad",
+      "outcome": "refused",
+      "ok": true,
+      "ms": 109.00062499999876,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/corner-cases/proof-param-ok.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 123.846667,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/init-prelude.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 330.024708,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/other/level-index-out-of-order.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 123.783208,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/other/nat-lit-add.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 123.84554200000001,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/other/nat-lit-ble.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 127.005625,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/other/nat-lit-sub.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 128.985791,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/other/sparse-name-index.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 126.30879200000001,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/app-lam.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 8465.755667,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/args-before-unfold.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 144.605083,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/beta-ladder.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 2174.2076669999997,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/church-numerals.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 178.301042,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/discarded-argument-match.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 1288.297792,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/discarded-argument.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 266.42608299999995,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/folded-constant-first.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 126.240792,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/folded-constant-last.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 134.036583,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/fueled-chain.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 209.13612500000005,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/grind-ring-5.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 2000.187333,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/identical-nesting.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.04037500000004,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/irrelevance-before-evaluation.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 109.71662500000002,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/irrelevance-refutes.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 112.549125,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/let-fold.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 144.39599999999996,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/let-ladder.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 1153.533125,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/magma-list-deep-n21.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 4085.1845420000004,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/magma-list-deep-n36.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 111235.28525,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/magma-list-pair-n21.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 50265.744792,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/magma-list-pair-n7.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 2648.2364580000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/proj-cheap-struct.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 128.5541250000001,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/proj-lazy-struct.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.87391699999989,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/proj-stuck-struct.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.10124999999971,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/repeated-subproblem.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 151.4878749999998,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/shared-subterm.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 179.866583,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/shift-cascade.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 148.66754200000014,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/perf/unroll-versus-evaluate.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 121.86525000000029,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/001_basicDef.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 111.65495899999996,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/003_arrowType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 112.16116600000032,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/004_dependentType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 112.70870799999966,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/005_constType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 111.52341699999988,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/006_betaReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 110.66566699999976,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/007_betaReduction2.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 112.28687500000024,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/008_forallSortWhnf.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 113.23333399999956,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/013_thmProof.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.71566699999948,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/015_levelComp1.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 120.6596669999999,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/016_levelComp2.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 136.667375,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/017_levelComp3.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.7202500000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/018_levelParams.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 118.31337499999972,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/020_levelComp4.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 121.25095799999963,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/021_levelComp5.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 118.83216600000014,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/022_imax1.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.32129199999963,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/023_imax2.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.17154200000004,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/024_levelMaxComm.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 108.5867500000004,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/025_levelMaxAssoc.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 112.46466599999985,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/026_levelMaxIdem.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 110.6405420000001,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/027_levelMaxAbsorb.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.38774999999987,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/028_inferVar.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 111.17620799999986,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/029_defEqLambda.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 100.46466599999985,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/030_peano1.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.26587500000005,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/031_peano2.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 118.40099999999984,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/032_peano3.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 101.53600000000006,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/033_letType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 103.7666249999993,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/034_letTypeDep.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 113.09108300000025,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/035_letRed.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 109.7447089999996,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/036_empty.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 111.48158300000068,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/037_boolType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.37962500000049,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/038_twoBool.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 113.27787499999977,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/039_andType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 113.99095799999941,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/040_prodType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.26058399999965,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/041_pprodType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.62125000000015,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/042_pUnitType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.9779580000004,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/043_eqType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 114.68245800000022,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/044_natDef.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.70416699999987,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/045_rbTreeDef.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.8775829999995,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/055_reduceCtorParam.mk.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.38137499999993,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/058_predWithTypeField.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.30641599999944,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/059_typeWithTypeField.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.1619580000006,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/060_typeWithTypeFieldPoly.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.48808300000019,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/062_emptyRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.44337499999983,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/063_boolRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 108.95737499999996,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/064_twoBoolRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.69945800000005,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/065_andRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.87633300000016,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/066_prodRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 121.71141700000044,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/067_pprodRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 108.84404100000029,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/068_punitRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 114.8937079999996,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/069_eqRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 103.63316699999996,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/070_nRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 120.30683300000055,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/071_rbTreeRef.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.05275000000074,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/072_boolPropRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.09699999999975,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/074_existsRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 114.57616700000017,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/075_typeSingletonRecReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 114.74041600000055,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/076_sortElimPropRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.90654100000029,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/077_sortElimProp2Rec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.84812500000044,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/078_boolRecEqns.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.15179199999966,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/079_prodRecEqns.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 121.48408399999971,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/080_nRecReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 119.49154099999942,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/081_listRecReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.7113330000002,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/082_RBTree.id_spec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 118.31879200000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/083_And.right.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 118.52287500000057,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/084_Prod.snd.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.66479199999958,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/085_PProd.snd.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.31445799999983,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/086_PSigma.snd.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.3296250000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/089_projProp1.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.33520800000042,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/091_projProp3.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 147.60991700000068,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/095_projDataIndexRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 128.31654200000048,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/098_projRed.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 136.03962500000034,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/099_ruleK.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 126.21541700000034,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/102_aNatLit.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 126.11945800000012,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/103_natLitEq.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 120.125583,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/104_proofIrrelevance.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.60912499999995,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/106_proofIrrelevanceWhnf.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.4731670000001,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/107_proofIrrelevanceUnderBinder.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 112.82216599999992,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/108_unitEta1.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.79454199999964,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/109_unitEta2.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.35416600000008,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/110_unitEta3.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 113.1825829999998,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/112_structEta.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 122.08762500000012,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/114_funEta.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.51858300000004,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/115_funEtaDep.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.41812500000015,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/119_reduceCtorParamRefl.mk.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 125.8921250000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/120_reduceCtorParamRefl2.mk.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.11687499999971,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/121_rTreeRec.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 119.78983300000073,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/122_rtreeRecReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 119.66187500000069,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/123_accRecType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.4970000000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/124_accRecReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 120.55758400000013,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/126_quotMkType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.80316700000003,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/127_quotIndType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 115.05375000000004,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/128_quotLiftType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 106.52358400000048,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/129_quotSoundType.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 117.7347920000002,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/130_quotLiftReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 116.48016699999971,
+      "note": ""
+    },
+    {
+      "file": "vendor/good/tutorial/131_quotIndReduction.ndjson",
+      "expected": "good",
+      "outcome": "accepted",
+      "ok": true,
+      "ms": 109.11945800000012,
+      "note": ""
+    }
+  ]
+}

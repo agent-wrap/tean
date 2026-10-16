@@ -1,0 +1,23 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+      - run: bun install
+      - run: bun check
+      - run: bun test
+      - name: fetch arena test suite
+        run: |
+          mkdir -p vendor
+          curl -sL -o /tmp/lean-arena-tests.tar.gz https://arena.lean-lang.org/lean-arena-tests.tar.gz
+          tar -xzf /tmp/lean-arena-tests.tar.gz -C vendor
+      # magma-list-deep-n36 needs more memory than a CI runner has
+      # (measured locally: above 16 GB). The skip prints in the log.
+      - name: arena suite
+        run: bun run scripts/arena.ts --timeout 120 --jobs 4 --exclude magma-list-deep-n36
