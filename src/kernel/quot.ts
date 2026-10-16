@@ -3,12 +3,12 @@
  * The checker never trusts the exported quotient types: it constructs the
  * canonical four declarations itself and compares.
  */
-import { Name } from "./name";
-import { Level } from "./level";
-import { type Expr, Sort, Const, App, Pi, mkAppN, exprEq } from "./expr";
-import { Environment, KernelError, type Decl } from "./env";
-import { LocalCtx } from "./tc";
-import { quotName, quotMkName, quotLiftName, quotIndName } from "./tc";
+import { Name } from "./name.ts";
+import { Level } from "./level.ts";
+import { type Expr, Sort, Const, App, Pi, mkAppN, exprEq } from "./expr.ts";
+import { Environment, KernelError, type Decl } from "./env.ts";
+import { LocalCtx } from "./tc.ts";
+import { quotName, quotMkName, quotLiftName, quotIndName } from "./tc.ts";
 
 const eqName = Name.simple("Eq");
 
@@ -137,7 +137,7 @@ export function checkExportedQuot(env: Environment, exported: Extract<Decl, { ki
     throw new KernelError(`exported quotient declaration '${exported.cv.name}' has the wrong type`);
 }
 
-import { instantiateLevelParams } from "./expr";
+import { instantiateLevelParams } from "./expr.ts";
 function renameLevelParams(e: Expr, from: Name[], to: Name[]): Expr {
   return instantiateLevelParams(
     e,

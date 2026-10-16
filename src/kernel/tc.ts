@@ -3,7 +3,7 @@
  * Ported from lean4 src/kernel/type_checker.cpp and the reduction templates
  * in inductive.h and quot.h, at githash 5045d005 (Lean 4.34.1).
  */
-import { Name } from "./name";
+import { Name } from "./name.ts";
 import {
   Level,
   levelEq,
@@ -14,7 +14,7 @@ import {
   normalizesToZero,
   getUndefParam,
   levelToString,
-} from "./level";
+} from "./level.ts";
 import {
   type Expr,
   ExprKind,
@@ -42,7 +42,7 @@ import {
   instantiateLevelParams,
   cheapBetaReduce,
   exprToString,
-} from "./expr";
+} from "./expr.ts";
 import {
   Environment,
   KernelError,
@@ -55,7 +55,7 @@ import {
   declIsUnsafe,
   recMajorIdx,
   isNonRecStructure,
-} from "./env";
+} from "./env.ts";
 
 // ---------------------------------------------------------------------------
 // Known names
@@ -200,11 +200,12 @@ export class LocalCtx {
 // The type checker
 // ---------------------------------------------------------------------------
 
-const enum Lbool {
-  False = 0,
-  True = 1,
-  Undef = 2,
-}
+const Lbool = {
+  False: 0,
+  True: 1,
+  Undef: 2,
+} as const;
+type Lbool = (typeof Lbool)[keyof typeof Lbool];
 
 function toLbool(b: boolean): Lbool {
   return b ? Lbool.True : Lbool.False;
@@ -219,11 +220,76 @@ function natGcdFn(a: bigint, b: bigint): bigint {
   return b;
 }
 
-const enum ReductionStatus {
-  Continue = 0,
-  DefUnknown = 1,
-  DefEqual = 2,
-  DefDiff = 3,
+const ReductionStatus = {
+  Continue: 0,
+  DefUnknown: 1,
+  DefEqual: 2,
+  DefDiff: 3,
+} as const;
+type ReductionStatus = (typeof ReductionStatus)[keyof typeof ReductionStatus];
+
+/**
+ * A map keyed on structural equality of expressions, not object identity.
+ * Reduction rebuilds equal terms as fresh objects, so an identity-keyed
+ * cache misses and the work repeats. Hash buckets with an equality scan
+ * mirror the expr_map of the real kernel.
+ */
+class ExprMap<V> {
+  private buckets = new Map<number, Array<{ k: Expr; v: V }>>();
+
+  get(k: Expr): V | undefined {
+    const b = this.buckets.get(k.hash);
+    if (b === undefined) return undefined;
+    for (const e of b) {
+      if (e.k === k || exprEq(e.k, k)) return e.v;
+    }
+    return undefined;
+  }
+
+  set(k: Expr, v: V): void {
+    let b = this.buckets.get(k.hash);
+    if (b === undefined) {
+      b = [];
+      this.buckets.set(k.hash, b);
+    }
+    for (const e of b) {
+      if (e.k === k || exprEq(e.k, k)) {
+        e.v = v;
+        return;
+      }
+    }
+    b.push({ k, v });
+  }
+}
+
+/** A set of unordered expression pairs, keyed structurally. */
+class ExprPairSet {
+  private buckets = new Map<number, Array<{ a: Expr; b: Expr }>>();
+
+  private key(a: Expr, b: Expr): number {
+    // Order-free combination.
+    return ((a.hash ^ b.hash) + ((a.hash & b.hash) | 0)) | 0;
+  }
+
+  has(a: Expr, b: Expr): boolean {
+    const bucket = this.buckets.get(this.key(a, b));
+    if (bucket === undefined) return false;
+    for (const e of bucket) {
+      if ((exprEq(e.a, a) && exprEq(e.b, b)) || (exprEq(e.a, b) && exprEq(e.b, a))) return true;
+    }
+    return false;
+  }
+
+  add(a: Expr, b: Expr): void {
+    if (this.has(a, b)) return;
+    const k = this.key(a, b);
+    let bucket = this.buckets.get(k);
+    if (bucket === undefined) {
+      bucket = [];
+      this.buckets.set(k, bucket);
+    }
+    bucket.push({ a, b });
+  }
 }
 
 export class TypeChecker {
@@ -232,11 +298,11 @@ export class TypeChecker {
   private definitionSafety: DefinitionSafety;
   private lparams: Name[] | null = null;
 
-  private inferTypeCache: [Map<Expr, Expr>, Map<Expr, Expr>] = [new Map(), new Map()];
-  private whnfCoreCache = new Map<Expr, Expr>();
-  private whnfCache = new Map<Expr, Expr>();
-  private defeqSuccess = new Set<string>();
-  private defeqFailure = new Set<string>();
+  private inferTypeCache: [ExprMap<Expr>, ExprMap<Expr>] = [new ExprMap(), new ExprMap()];
+  private whnfCoreCache = new ExprMap<Expr>();
+  private whnfCache = new ExprMap<Expr>();
+  private defeqSuccess = new ExprPairSet();
+  private defeqFailure = new ExprPairSet();
 
   constructor(env: Environment, safety: DefinitionSafety = "safe", lctx?: LocalCtx) {
     this.env = env;
@@ -902,24 +968,20 @@ export class TypeChecker {
     return true;
   }
 
-  private defeqKey(t: Expr, s: Expr): string {
-    return t.id <= s.id ? `${t.id}:${s.id}` : `${s.id}:${t.id}`;
-  }
-
   private cacheSuccess(t: Expr, s: Expr): void {
-    this.defeqSuccess.add(this.defeqKey(t, s));
+    this.defeqSuccess.add(t, s);
   }
 
   private succeededBefore(t: Expr, s: Expr): boolean {
-    return this.defeqSuccess.has(this.defeqKey(t, s));
+    return this.defeqSuccess.has(t, s);
   }
 
   private cacheFailure(t: Expr, s: Expr): void {
-    this.defeqFailure.add(this.defeqKey(t, s));
+    this.defeqFailure.add(t, s);
   }
 
   private failedBefore(t: Expr, s: Expr): boolean {
-    return this.defeqFailure.has(this.defeqKey(t, s));
+    return this.defeqFailure.has(t, s);
   }
 
   private isDefEqBinding(t0: Expr, s0: Expr): boolean {

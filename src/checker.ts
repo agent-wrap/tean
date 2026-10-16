@@ -4,19 +4,19 @@
  * inductives, constructors, and recursors is never trusted: the checker
  * derives its own and compares.
  */
-import { Name } from "./kernel/name";
-import { type Expr, exprEq } from "./kernel/expr";
+import { Name } from "./kernel/name.ts";
+import { type Expr, exprEq } from "./kernel/expr.ts";
 import {
   Environment,
   KernelError,
   checkDuplicatedUnivParams,
   type ConstantVal,
   type DefinitionSafety,
-} from "./kernel/env";
-import { TypeChecker } from "./kernel/tc";
-import { addInductive, type InductiveDecl, type InductiveType } from "./kernel/inductive";
-import { addQuot, checkExportedQuot } from "./kernel/quot";
-import type { ExpDecl, ExpInductive } from "./export/parser";
+} from "./kernel/env.ts";
+import { TypeChecker } from "./kernel/tc.ts";
+import { addInductive, type InductiveDecl, type InductiveType } from "./kernel/inductive.ts";
+import { addQuot, checkExportedQuot } from "./kernel/quot.ts";
+import type { ExpDecl, ExpInductive } from "./export/parser.ts";
 
 export class Checker {
   env = new Environment();

@@ -1,9 +1,9 @@
 /**
  * Declarations and the environment, matching lean4 src/kernel/declaration.h.
  */
-import { Name } from "./name";
-import type { Expr } from "./expr";
-import { ExprKind, getAppFn } from "./expr";
+import { Name } from "./name.ts";
+import type { Expr } from "./expr.ts";
+import { ExprKind, getAppFn } from "./expr.ts";
 
 export class KernelError extends Error {}
 

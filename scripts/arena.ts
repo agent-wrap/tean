@@ -33,11 +33,17 @@ function collect(dir: string): string[] {
 
 async function runOne(file: string, expected: "good" | "bad", timeoutSec: number): Promise<TestResult> {
   const start = performance.now();
-  const proc = Bun.spawn(["bun", "run", join(import.meta.dir, "..", "src", "main.ts"), "--quiet", file], {
-    stdout: "pipe",
-    stderr: "pipe",
-    timeout: timeoutSec * 1000,
-  });
+  // Node with a raised stack: reduction depth on real proofs exceeds the
+  // fixed 8 MB stack that Bun gives (measured; see docs/NOTEBOOK.md).
+  const mainPath = join(import.meta.dir, "..", "src", "main.ts");
+  const proc = Bun.spawn(
+    ["bash", "-c", `ulimit -s 65520; exec node --stack-size=60000 --max-old-space-size=16000 "${mainPath}" --quiet "${file}"`],
+    {
+      stdout: "pipe",
+      stderr: "pipe",
+      timeout: timeoutSec * 1000,
+    },
+  );
   const exitCode = await proc.exited;
   const ms = performance.now() - start;
   const stderr = await new Response(proc.stderr).text();

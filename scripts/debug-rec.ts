@@ -1,9 +1,9 @@
 /** Debug: show the derived vs exported recursor for the first mismatch. */
-import { ExportParser } from "../src/export/parser";
-import { Checker } from "../src/checker";
-import { exprToString, exprEq } from "../src/kernel/expr";
-import { Environment } from "../src/kernel/env";
-import { addInductive } from "../src/kernel/inductive";
+import { ExportParser } from "../src/export/parser.ts";
+import { Checker } from "../src/checker.ts";
+import { exprToString, exprEq } from "../src/kernel/expr.ts";
+import { Environment } from "../src/kernel/env.ts";
+import { addInductive } from "../src/kernel/inductive.ts";
 
 const path = process.argv[2]!;
 const target = process.argv[3]!;

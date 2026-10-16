@@ -7,21 +7,22 @@
  * equality ignores: binder names and binder infos (see expr_eq_fn<false>
  * in lean4 src/kernel/expr_eq_fn.cpp).
  */
-import { Name } from "./name";
-import { Level, levelEq, levelListEq, instLevel } from "./level";
+import { Name } from "./name.ts";
+import { Level, levelEq, levelListEq, instLevel } from "./level.ts";
 
-export const enum ExprKind {
-  BVar = 0,
-  FVar = 1,
-  Sort = 2,
-  Const = 3,
-  App = 4,
-  Lam = 5,
-  Pi = 6,
-  Let = 7,
-  Lit = 8,
-  Proj = 9,
-}
+export const ExprKind = {
+  BVar: 0,
+  FVar: 1,
+  Sort: 2,
+  Const: 3,
+  App: 4,
+  Lam: 5,
+  Pi: 6,
+  Let: 7,
+  Lit: 8,
+  Proj: 9,
+} as const;
+export type ExprKind = (typeof ExprKind)[keyof typeof ExprKind];
 
 export type BinderInfo = "default" | "implicit" | "strictImplicit" | "instImplicit";
 
@@ -50,8 +51,10 @@ export class BVar extends ExprBase {
   override readonly looseBVarRange: number;
   override readonly hasFVar = false;
   override readonly hasLevelParam = false;
-  constructor(readonly idx: number) {
+  readonly idx: number;
+  constructor(idx: number) {
     super();
+    this.idx = idx;
     this.hash = mix(3, idx);
     this.looseBVarRange = idx + 1;
   }
@@ -81,8 +84,10 @@ export class Sort extends ExprBase {
   override readonly looseBVarRange = 0;
   override readonly hasFVar = false;
   override readonly hasLevelParam: boolean;
-  constructor(readonly level: Level) {
+  readonly level: Level;
+  constructor(level: Level) {
     super();
+    this.level = level;
     this.hash = mix(7, level.hash);
     this.hasLevelParam = level.hasParam;
   }
@@ -94,11 +99,12 @@ export class Const extends ExprBase {
   override readonly looseBVarRange = 0;
   override readonly hasFVar = false;
   override readonly hasLevelParam: boolean;
-  constructor(
-    readonly name: Name,
-    readonly levels: Level[],
-  ) {
+  readonly name: Name;
+  readonly levels: Level[];
+  constructor(name: Name, levels: Level[]) {
     super();
+    this.name = name;
+    this.levels = levels;
     let h = mix(11, name.hash);
     let hasParam = false;
     for (const l of levels) {
@@ -116,11 +122,12 @@ export class App extends ExprBase {
   override readonly looseBVarRange: number;
   override readonly hasFVar: boolean;
   override readonly hasLevelParam: boolean;
-  constructor(
-    readonly fn: Expr,
-    readonly arg: Expr,
-  ) {
+  readonly fn: Expr;
+  readonly arg: Expr;
+  constructor(fn: Expr, arg: Expr) {
     super();
+    this.fn = fn;
+    this.arg = arg;
     this.hash = mix(13, mix(fn.hash, arg.hash));
     this.looseBVarRange = Math.max(fn.looseBVarRange, arg.looseBVarRange);
     this.hasFVar = fn.hasFVar || arg.hasFVar;
@@ -133,14 +140,16 @@ abstract class Binding extends ExprBase {
   override readonly looseBVarRange: number;
   override readonly hasFVar: boolean;
   override readonly hasLevelParam: boolean;
-  constructor(
-    seed: number,
-    readonly binderName: Name,
-    readonly binderInfo: BinderInfo,
-    readonly type: Expr,
-    readonly body: Expr,
-  ) {
+  readonly binderName: Name;
+  readonly binderInfo: BinderInfo;
+  readonly type: Expr;
+  readonly body: Expr;
+  constructor(seed: number, binderName: Name, binderInfo: BinderInfo, type: Expr, body: Expr) {
     super();
+    this.binderName = binderName;
+    this.binderInfo = binderInfo;
+    this.type = type;
+    this.body = body;
     // The hash ignores the binder name and the binder info, as equality does.
     this.hash = mix(seed, mix(type.hash, body.hash));
     this.looseBVarRange = Math.max(type.looseBVarRange, body.looseBVarRange - 1);
@@ -169,14 +178,18 @@ export class Let extends ExprBase {
   override readonly looseBVarRange: number;
   override readonly hasFVar: boolean;
   override readonly hasLevelParam: boolean;
-  constructor(
-    readonly binderName: Name,
-    readonly type: Expr,
-    readonly value: Expr,
-    readonly body: Expr,
-    readonly nondep: boolean,
-  ) {
+  readonly binderName: Name;
+  readonly type: Expr;
+  readonly value: Expr;
+  readonly body: Expr;
+  readonly nondep: boolean;
+  constructor(binderName: Name, type: Expr, value: Expr, body: Expr, nondep: boolean) {
     super();
+    this.binderName = binderName;
+    this.type = type;
+    this.value = value;
+    this.body = body;
+    this.nondep = nondep;
     this.hash = mix(23, mix(type.hash, mix(value.hash, mix(body.hash, nondep ? 1 : 0))));
     this.looseBVarRange = Math.max(type.looseBVarRange, value.looseBVarRange, body.looseBVarRange - 1);
     this.hasFVar = type.hasFVar || value.hasFVar || body.hasFVar;
@@ -190,8 +203,10 @@ export class Lit extends ExprBase {
   override readonly looseBVarRange = 0;
   override readonly hasFVar = false;
   override readonly hasLevelParam = false;
-  constructor(readonly val: bigint | string) {
+  readonly val: bigint | string;
+  constructor(val: bigint | string) {
     super();
+    this.val = val;
     this.hash =
       typeof val === "bigint"
         ? mix(29, Number(val % 1000000007n))
@@ -205,12 +220,14 @@ export class Proj extends ExprBase {
   override readonly looseBVarRange: number;
   override readonly hasFVar: boolean;
   override readonly hasLevelParam: boolean;
-  constructor(
-    readonly structName: Name,
-    readonly idx: number,
-    readonly struct: Expr,
-  ) {
+  readonly structName: Name;
+  readonly idx: number;
+  readonly struct: Expr;
+  constructor(structName: Name, idx: number, struct: Expr) {
     super();
+    this.structName = structName;
+    this.idx = idx;
+    this.struct = struct;
     this.hash = mix(37, mix(structName.hash, mix(idx, struct.hash)));
     this.looseBVarRange = struct.looseBVarRange;
     this.hasFVar = struct.hasFVar;
@@ -662,7 +679,7 @@ export function instantiateLevelParams(e: Expr, params: Name[], values: Level[])
 // consumeTypeAnnotations, from src/Lean/Expr.lean
 // ---------------------------------------------------------------------------
 
-import { Name as NameRef } from "./name";
+import { Name as NameRef } from "./name.ts";
 const optParamName = NameRef.simple("optParam");
 const autoParamName = NameRef.simple("autoParam");
 const outParamName = NameRef.simple("outParam");

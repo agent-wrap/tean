@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { Name } from "../src/kernel/name";
-import { Level, levelZero } from "../src/kernel/level";
-import { Sort, Const, App, Lam, Pi, BVar, Lit, exprEq, instantiate1, type Expr } from "../src/kernel/expr";
-import { Environment } from "../src/kernel/env";
-import { TypeChecker } from "../src/kernel/tc";
-import { addInductive } from "../src/kernel/inductive";
+import { Name } from "../src/kernel/name.ts";
+import { Level, levelZero } from "../src/kernel/level.ts";
+import { Sort, Const, App, Lam, Pi, BVar, Lit, exprEq, instantiate1, type Expr } from "../src/kernel/expr.ts";
+import { Environment } from "../src/kernel/env.ts";
+import { TypeChecker } from "../src/kernel/tc.ts";
+import { addInductive } from "../src/kernel/inductive.ts";
 
 const prop = new Sort(levelZero);
 const type0 = new Sort(Level.succRaw(levelZero));

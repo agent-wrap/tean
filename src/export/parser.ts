@@ -3,10 +3,10 @@
  * See docs/format_ndjson.md. The real bytes were read before this was
  * written; see docs/NOTEBOOK.md 2026-10-15.
  */
-import { Name } from "../kernel/name";
-import { Level } from "../kernel/level";
-import { type Expr, BVar, Sort, Const, App, Lam, Pi, Let, Lit, Proj, type BinderInfo } from "../kernel/expr";
-import { KernelError, type Hints, type DefinitionSafety } from "../kernel/env";
+import { Name } from "../kernel/name.ts";
+import { Level } from "../kernel/level.ts";
+import { type Expr, BVar, Sort, Const, App, Lam, Pi, Let, Lit, Proj, type BinderInfo } from "../kernel/expr.ts";
+import { KernelError, type Hints, type DefinitionSafety } from "../kernel/env.ts";
 
 export class ParseError extends Error {}
 

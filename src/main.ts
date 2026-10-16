@@ -5,8 +5,8 @@
  *
  * Exit code 0: every declaration checked. Nonzero: a declaration failed.
  */
-import { ExportParser } from "./export/parser";
-import { Checker } from "./checker";
+import { ExportParser } from "./export/parser.ts";
+import { Checker } from "./checker.ts";
 
 interface Failure {
   decl: string;
@@ -21,7 +21,10 @@ export interface CheckResult {
 
 export async function checkFile(path: string, keepGoing: boolean): Promise<CheckResult> {
   const start = performance.now();
-  const text = await Bun.file(path).text();
+  // node:fs keeps this file runnable under both Bun and Node. Node gets a
+  // far larger stack via --stack-size, which the deep tests need.
+  const { readFile } = await import("node:fs/promises");
+  const text = await readFile(path, "utf8");
   const parser = new ExportParser();
   const checker = new Checker();
   const failures: Failure[] = [];
@@ -70,6 +73,12 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
+const isDirectRun = (): boolean => {
+  if (typeof Bun !== "undefined") return import.meta.main;
+  const entry = process.argv[1];
+  return entry !== undefined && import.meta.url.endsWith(entry.split("/").pop() ?? "");
+};
+
+if (isDirectRun()) {
   await main();
 }

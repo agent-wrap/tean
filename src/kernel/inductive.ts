@@ -3,7 +3,7 @@
  * elimination of nested inductive types.
  * Ported from lean4 src/kernel/inductive.cpp at githash 5045d005.
  */
-import { Name } from "./name";
+import { Name } from "./name.ts";
 import {
   Level,
   LevelKind,
@@ -12,7 +12,7 @@ import {
   isNotZero,
   normalizesToZero,
   isGeq,
-} from "./level";
+} from "./level.ts";
 import {
   type Expr,
   ExprKind,
@@ -35,9 +35,9 @@ import {
   abstractFVars,
   instantiateLevelParams,
   consumeTypeAnnotations,
-} from "./expr";
-import { Environment, KernelError, checkDuplicatedUnivParams, type Decl, type RecRule } from "./env";
-import { TypeChecker, LocalCtx } from "./tc";
+} from "./expr.ts";
+import { Environment, KernelError, checkDuplicatedUnivParams, type Decl, type RecRule } from "./env.ts";
+import { TypeChecker, LocalCtx } from "./tc.ts";
 
 export interface Constructor {
   name: Name;
@@ -996,10 +996,12 @@ function appendName(pre: Name, n: Name): Name {
 // ---------------------------------------------------------------------------
 
 class RestoreCtx {
-  constructor(
-    readonly res: ElimNestedResult,
-    readonly auxEnv: Environment,
-  ) {}
+  readonly res: ElimNestedResult;
+  readonly auxEnv: Environment;
+  constructor(res: ElimNestedResult, auxEnv: Environment) {
+    this.res = res;
+    this.auxEnv = auxEnv;
+  }
 
   getNestedIfAuxConstructor(c: Name): { nested: Expr; auxIName: Name } | null {
     const info = this.auxEnv.find(c);

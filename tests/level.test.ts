@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { Name } from "../src/kernel/name";
+import { Name } from "../src/kernel/name.ts";
 import {
   Level,
   levelZero,
@@ -10,7 +10,7 @@ import {
   isGeq,
   isNotZero,
   normalizesToZero,
-} from "../src/kernel/level";
+} from "../src/kernel/level.ts";
 
 const u = Level.param(Name.simple("u"));
 const v = Level.param(Name.simple("v"));

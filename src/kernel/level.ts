@@ -2,15 +2,16 @@
  * Universe levels, ported from lean4 src/kernel/level.cpp at githash 5045d005.
  * The equality test is normalize-then-compare, as in the real kernel.
  */
-import { Name } from "./name";
+import { Name } from "./name.ts";
 
-export const enum LevelKind {
-  Zero = 0,
-  Param = 1,
-  Max = 2,
-  IMax = 3,
-  Succ = 4,
-}
+export const LevelKind = {
+  Zero: 0,
+  Param: 1,
+  Max: 2,
+  IMax: 3,
+  Succ: 4,
+} as const;
+export type LevelKind = (typeof LevelKind)[keyof typeof LevelKind];
 
 function mix(h1: number, h2: number): number {
   let h = (h1 * 0x9e3779b1) | 0;

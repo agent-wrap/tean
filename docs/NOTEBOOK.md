@@ -43,6 +43,91 @@ Asked: what format does lean4export write now?
 Meaning: the prompt said NDJSON and the prompt was right, but the old build
 read a line-based text format. The parser is new work, not a port.
 
+## 2026-10-15 — Ground truth for the kernel came from six source files
+
+Asked: what does the real kernel do, exactly, at the Lean version of the
+export (4.34.1, githash 5045d005)?
+
+Downloaded into `vendor/`: `type_checker.cpp`, `inductive.cpp`, `quot.cpp`,
+`level.cpp`, `environment.cpp`, `declaration.cpp`, plus `inductive.h`,
+`quot.h`, `expr_eq_fn.cpp`, and `instantiate.cpp`. Facts that moved the
+design, each checked in the source, not from memory:
+
+- The string rule compares a literal against `String.ofList`, not
+  `String.mk`. H7 confirmed in a form nobody guessed.
+- The kernel bounds Nat numerals at 128 MB (`LEAN_NAT_MAX_SIZE`), bounds
+  `Nat.pow` and `Nat.shiftLeft` by predicted result size, and bounds their
+  second argument to 32 bits. The perf `bad` tests target exactly this.
+- Beta discharges the whole spine in one `instantiate` call. H4 confirmed
+  in source. The measurement of the cost is still open.
+- Structural equality ignores binder names AND binder infos
+  (`expr_eq_fn<false>`), so the hash must too. H2 confirmed in source.
+- Proof irrelevance returns a definitive false when the first term is a
+  proof and the types are not defeq. It is three-valued, but not in the
+  shape H3 described.
+- Theorems must be propositions. Axioms only need a sort.
+- The quotient module builds its four declarations itself and checks `Eq`
+  first. Exported quot types are decoration.
+- A recursor is derived, never read from the input. The kernel re-checks
+  its own derived recursors for type preservation (`check_recursors`).
+- K-like reduction, structure eta on the major premise, and
+  literal-to-constructor conversion all live inside `inductive_reduce_rec`.
+
+## 2026-10-15 — First full local arena run: 152/199, one root blocked 46
+
+Command: `bun run scripts/arena.ts` over the extracted tarball.
+
+- Round 1: **152/199. All 72 bad tests refused.** 47 good tests failed.
+- 46 of the 47 shared one root: "exported recursor does not match the
+  derived one" on universe-polymorphic types.
+- Diffed derived vs exported `PUnit.rec`: the fresh elim level param is
+  `u_1` in the export and `u1` in my code. `name::append_after` inserts an
+  underscore. One character, 46 tests. H11 (rank by blocked count) holds.
+- Round 2 after the fix: **185/199**. The next root: `HAdd.rec` differs by
+  an `outParam` wrapper. The kernel strips type annotations
+  (`consumeTypeAnnotations`: optParam, autoParam, outParam, semiOutParam)
+  when it makes recursor locals. Found by diffing real bytes again.
+- Round 3 after that fix: **195/199**. The four left are resource cases:
+  two stack overflows, one out-of-memory, one timeout.
+
+## 2026-10-15 — The deep terms are made, not read
+
+Asked: how deep are the terms in the failing perf tests?
+
+- `python3` DAG-depth scan of the inputs: church-numerals max depth **128**,
+  app-lam 19,999, discarded-argument-match 205, magma-n36 1,325.
+- So church-numerals (reduction depth 14,520 per the arena description)
+  builds its depth during reduction. H10 confirmed, with a sharper shape:
+  the input is shallow, the reduction is deep.
+- Measured stack depth: Bun default **65,483** frames,
+  `BUN_JSC_maxPerThreadStackUsage=512MB` **113,405**, Bun Worker **45,247**
+  (workers are worse). `ulimit -s` does not move Bun. Bun plus ulimit plus
+  the env var segfaults.
+- Node 26: `ulimit -s 65520` + `--stack-size=60000` gives **639,753**
+  frames, ten times Bun. Decision: `bun check` stays the typechecker and
+  `bun test` the test runner; the arena runner executes the same TypeScript
+  under Node with the big stack. The source moved to erasable-only syntax
+  (no const enum, no parameter properties) so both engines run one code.
+- `instantiate` was rewritten as an explicit-stack machine after a measured
+  overflow (trace pointed at expr.ts, the recursive walk). First version of
+  the rewrite had the child pop order reversed, caught by `bun test`.
+- Result: church-numerals passes in 0.14 s, app-lam in 7.2 s under Node.
+
+## 2026-10-15 — The arena numbers for everyone else
+
+Command: `curl results.json` from the arena, then python.
+
+- The hosted suite has 234 tests. The top score is **208/234**, held by
+  lean4lean, the official kernel, tenet, nanoda-class checkers.
+- My four hard tests also break others: church-numerals fails 7 checkers,
+  app-lam 7, discarded-argument-match 4, magma-n36 9.
+- magma-n36 pass times spread from 2.2 s (lazylean) to 35 s (con-ron).
+  This is a genuinely hard test, good material for the cost chapter.
+- Identity-keyed caches were the OOM suspect for discarded-argument-match:
+  reduction rebuilds equal terms as fresh objects, so an identity cache
+  misses and work repeats. Switched whnf, infer, and defeq caches to
+  hash-bucket maps with structural equality, as the kernel's expr_map does.
+
 ## Hypotheses carried from the deleted build, each unverified
 
 Each one is a hint, not a fact. Status moves only with a measurement in this

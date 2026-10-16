@@ -2,12 +2,13 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.18.0/.schema/devbox.schema.json",
   "packages": [
     "bun@latest",
-    "elan@latest"
+    "elan@latest",
+    "nodejs@latest"
   ],
   "shell": {
     "scripts": {
       "check": ["bun check"],
-      "test": ["bun test"],
+      "test":  ["bun test"],
       "arena": ["bun run arena"]
     }
   }
