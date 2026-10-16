@@ -1,0 +1,15 @@
+{
+  "name": "tean",
+  "version": "0.1.0",
+  "description": "A Lean 4 proof checker in TypeScript",
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "bun test",
+    "arena": "bun run scripts/arena.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.0"
+  }
+}
