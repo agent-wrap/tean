@@ -7,7 +7,7 @@ import { weaken, restoreAllRules } from "../../src/kernel/weaken.ts";
 
 async function verdict(path: string): Promise<string> {
   const r = await checkFile(path, false);
-  if (r.failures.length === 0) return `ACCEPTED (${r.declsChecked} declarations)`;
+  if (r.failures.length === 0) return `ACCEPTED (${r.declsChecked} declaration${r.declsChecked === 1 ? "" : "s"})`;
   const f = r.failures[0];
   if (f === undefined || f.failure.kind !== "refusal") return "CHECKER BUG";
   return `refused [${f.failure.code}] at ${f.decl}`;

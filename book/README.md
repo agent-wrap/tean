@@ -8,8 +8,8 @@ assistant. Start at [ch01.md](ch01.md); every chapter names the next one.
 > building one and pointing it at a real library.
 
 The checker the book describes lives in `../src` and passes the local
-Lean Kernel Arena suite 199/199. Every number in the book was measured
-and is recorded, with its command, in `../docs/NOTEBOOK.md`.
+Lean Kernel Arena suite 199/199. Every measured number in the book is
+recorded, with its command, in `../docs/NOTEBOOK.md`.
 
 ## The spine: a verified correspondence
 
@@ -26,8 +26,12 @@ type theory maps to:
   that the normal kernel refuses and a kernel with exactly that rule
   disabled accepts (`../tests/forgery.test.ts`).
 
-Chapters cite rules as `[R: T-APP]`. CI fails when a citation does not
-resolve, in either direction.
+Chapters cite rules as `[R: T-APP](RULES.md#t-app)` — the tag links to
+[RULES.md](RULES.md), a generated appendix giving each rule's plain-English
+name, meaning, and pinned links to the thesis, the kernel source, and this
+checker. CI fails when a citation does not resolve in either direction,
+when a link's target is not its own anchor, or when the appendix is stale
+against the registry.
 
 ## The gates (`../scripts/book-gates.ts`, run in CI)
 
@@ -42,13 +46,16 @@ resolve, in either direction.
    first on a fresh clone; `vendor/` is not committed).
 6. No term is used before the chapter that defines it
    ([terms.json](terms.json)).
+7. [RULES.md](RULES.md) equals a fresh generation from the registry
+   (`../scripts/gen-rules-appendix.ts`), and every chapter citation links
+   to its own anchor there.
 
 ## Reading rules the book holds itself to
 
 - Chapters 1–7 contain no Lean syntax, no repository paths, no commands,
-  and no test names in their prose. The machine apparatus (gate comments,
-  the `Try it` footer) is the one sanctioned exception, kept out of the
-  reader's way in HTML comments.
+  and no test names in their prose. The sanctioned exceptions are the
+  machine apparatus (gate comments in HTML, the `Try it` footer), link
+  targets, and the titles cited under References.
 - Data before notation: every idea arrives as a TypeScript type, then a
   runnable function, then the formal rule.
 - Every dead guess is kept, next to the measurement that killed it

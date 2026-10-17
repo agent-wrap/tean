@@ -18,6 +18,14 @@ jobs:
       # property tests), type-coverage ratchet, dead-code check,
       # suppression policy, book gates
       - run: bun run verify
+      # The book's references and the generated rules appendix carry
+      # links (DOIs, pinned GitHub blobs, relative repo paths). Accept
+      # 403/429: some DOI landing pages bot-wall while still resolving.
+      - name: book link check
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --accept 200,201,202,203,204,206,301,302,403,429 'book/**/*.md'
+          fail: true
       - name: fetch arena test suite
         run: |
           mkdir -p vendor

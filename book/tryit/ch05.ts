@@ -69,7 +69,7 @@ function whnf(e: Expr): Expr {
 
 const imax = (l1: number, l2: number): number => (l2 === 0 ? 0 : Math.max(l1, l2));
 
-// ctx[i] is the type of bvar #i (already lifted to this depth).
+// ctx[i] is bvar #i's type at its binder; lift it past binders crossed since.
 function infer(e: Expr, ctx: Expr[]): Expr {
   switch (e.kind) {
     case "sort":

@@ -66,6 +66,7 @@ console.log(show(instantiate(twoBinders.kind === "lam" ? twoBinders.body : T, cn
 
 // The capture case lift exists for: substitute (fun => #0 #1) for #0
 // UNDER a binder. The inner #1 must still point outside after the move.
+// The target #0 sits under that binder, so it appears as #1 there.
 const needsLift = lam(T, app(bvar(0), bvar(1)));
 console.log(show(instantiate(lam(T, app(bvar(1), bvar(0))), needsLift)));
 

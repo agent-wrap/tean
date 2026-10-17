@@ -17,6 +17,9 @@
  *     registry; every registry rule is cited by at least one chapter.
  *  7. No forward references: each term in book/terms.json first occurs in
  *     or after its defining chapter.
+ *  8. The appendix: book/RULES.md equals a fresh generation from the
+ *     registry, every chapter citation is a link whose target is its own
+ *     RULES.md anchor, and no citation is left unlinked.
  *
  * Reference scanning is wrap-aware: chapters are scanned as joined text,
  * so a citation broken across a line wrap is still found (and a stray
@@ -25,6 +28,7 @@
  */
 import { readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { generateRulesAppendix, loadRegistry } from "./gen-rules-appendix.ts";
 
 let failures = 0;
 function fail(msg: string): void {
@@ -65,9 +69,10 @@ for (const [i, path] of chapterPaths.entries()) {
   chapters.push({ path, num: i + 1, text, joined: text.replace(/\n>?\s*/g, " "), title: h1[2] ?? "" });
 }
 
-// Gate 2: claim present, next-chapter reference matches the real title.
+// Gate 2: exactly one claim, next-chapter reference matches the real title.
 for (const ch of chapters) {
-  if (!ch.text.includes("**Claim.**")) fail(`${ch.path} has no **Claim.**`);
+  const claims = (ch.text.match(/\*\*Claim\.\*\*/g) ?? []).length;
+  if (claims !== 1) fail(`${ch.path} has ${claims} **Claim.** blocks (must be exactly 1)`);
   if (ch.num < 12) {
     const next = chapters.find((c) => c.num === ch.num + 1);
     if (next !== undefined) {
@@ -154,14 +159,45 @@ const registry = (JSON.parse(read("book/rules.json")) as { rules: Rule[] }).rule
 const ruleIds = new Set(registry.map((r) => r.id));
 if (registry.length !== ruleIds.size) fail("book/rules.json has duplicate rule ids");
 
+// A symbol citation must name the file that DEFINES the symbol, not one
+// that merely calls it, and must match the whole identifier. Three real
+// errors hid behind a plain substring test: a symbol that existed only
+// inside a longer name (nat_lit_ext in is_nat_lit_ext), and two defined
+// in a different vendored file than the one cited. The match therefore
+// requires the symbol to open a definition: start of line, optional
+// return type / qualifiers, then the symbol and its parameter list.
+// The symbol must open a definition: a line start, an optional return
+// type or qualifier chain (which may not contain "=", "(" or ";", so a
+// call is not mistaken for a definition), a word boundary, then the
+// symbol and its parameter list.
+const STATEMENT_KEYWORDS = "return|if|while|for|else|throw|new|case|switch|do|delete";
+function definesSymbol(text: string, symbol: string): boolean {
+  const esc = symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(
+    `(?:^|\\n)[ \\t]*(?!(?:${STATEMENT_KEYWORDS})\\b)(?:[A-Za-z_][\\w:<>&*,\\s]*(?<![\\w]))?${esc}\\s*\\(`,
+  );
+  return re.test(text);
+}
+
 function checkCite(id: string, what: string, cite: Cite): void {
   if (!existsSync(cite.file)) {
     fail(`${id}: ${what} file missing: ${cite.file} (run scripts/fetch-vendor-sources.sh?)`);
     return;
   }
-  const needle = cite.symbol ?? cite.anchor ?? "";
-  if (needle !== "" && !read(cite.file).includes(needle)) {
-    fail(`${id}: "${needle}" not found in ${cite.file}`);
+  const text = read(cite.file);
+  if (cite.symbol !== undefined && cite.symbol !== "") {
+    if (!definesSymbol(text, cite.symbol)) {
+      const calledOnly = text.includes(cite.symbol);
+      fail(
+        `${id}: ${what} "${cite.symbol}" is ${calledOnly ? "present but not defined" : "not found"} in ${cite.file}` +
+          (calledOnly ? " (a call site or a longer identifier is not a definition)" : ""),
+      );
+    }
+    return;
+  }
+  const anchor = cite.anchor ?? "";
+  if (anchor !== "" && !text.includes(anchor)) {
+    fail(`${id}: ${what} anchor "${anchor}" not found in ${cite.file}`);
   }
 }
 
@@ -208,6 +244,27 @@ for (const [term, definedIn] of Object.entries(terms)) {
       }
       break;
     }
+  }
+}
+
+// Gate 8: the appendix is fresh, and every citation is a link to its own
+// anchor (the registry's reader-facing face; see book/RULES.md).
+const appendixPath = "book/RULES.md";
+if (!existsSync(appendixPath)) {
+  fail(`${appendixPath} missing (run: bun run scripts/gen-rules-appendix.ts)`);
+} else if (read(appendixPath) !== generateRulesAppendix(loadRegistry())) {
+  fail(`${appendixPath} is stale (run: bun run scripts/gen-rules-appendix.ts)`);
+}
+for (const ch of chapters) {
+  for (const m of ch.joined.matchAll(/\[R: ([A-Z0-9-]+)\]\(([^)]*)\)/g)) {
+    const id = m[1] ?? "";
+    const target = m[2] ?? "";
+    if (target !== `RULES.md#${id.toLowerCase()}`) {
+      fail(`${ch.path} citation [R: ${id}] links to "${target}", expected RULES.md#${id.toLowerCase()}`);
+    }
+  }
+  for (const m of ch.joined.matchAll(/\[R: ([A-Z0-9-]+)\](?!\()/g)) {
+    fail(`${ch.path} citation [R: ${m[1] ?? ""}] is not linked to the appendix`);
   }
 }
 

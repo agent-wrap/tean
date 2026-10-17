@@ -12,7 +12,7 @@ THESIS_TAR="https://codeload.github.com/digama0/lean-type-theory/tar.gz/refs/hea
 
 mkdir -p vendor/lean-type-theory
 
-for f in type_checker.cpp level.cpp inductive.cpp inductive.h environment.cpp quot.cpp; do
+for f in type_checker.cpp level.cpp inductive.cpp inductive.h environment.cpp quot.cpp quot.h; do
   out="vendor/lean4-${f}"
   if [ ! -f "$out" ]; then
     echo "fetch ${out}"

@@ -418,6 +418,119 @@ loop — heartbeat to find the declaration, churn counter to find the
 constant, stack probe to find the call path, then one measured fix. No
 fix went in without a number before and after.
 
+## 2026-10-16 — The book reviewed against its own gates, then fixed
+
+Asked: review book/ from the raw sources — citations against the vendored
+thesis and kernel, every number against this file, a simulated first read
+of chapters 1–7 — then apply the fixes.
+
+- Registry audit, 14 of 37 rules sampled against the vendored LaTeX and
+  C++: T-LIT cited `nat_lit_ext`, which is not a symbol (real:
+  `infer_lit`); RED-IOTA cited the right symbol in the wrong file (it
+  lives in inductive.h); DEFEQ-ETA resolved only via a call site (real:
+  `try_eta_expansion_core`); the T-PROJ/RED-PROJ notes said the thesis
+  "compiles projections away" — it never mentions projections; and
+  WF-DECL-TYPE's "distinct universe parameters" is a kernel premise, not
+  the thesis's (which requires containment). All five fixed in rules.json.
+- Numbers: 33 of ~40 prose numbers trace to this file. Two were wrong in
+  the book: "three ranked fixes to 195" (this file records two), and
+  chapter 10 called magma-n21's 10.1 s "the hardest perf test" while the
+  48 GB row belongs to n36. Chapter 12 credited the two init-corpus bugs
+  to an afternoon with the arena board's checkers; this file says churn
+  profiling. All corrected in the chapters.
+- A simulated reader of ch1–7 (a model in role — NOT reader evidence; that
+  open row stands) logged every stall. Worst: ch6 uses "eliminate into
+  Prop" one chapter before elimination exists; systemic: the [R: …] tags
+  were never explained anywhere. Fixed with glosses and one sentence in
+  ch1 at first use.
+- New machinery: book/RULES.md, generated from rules.json by
+  scripts/gen-rules-appendix.ts — plain-English name, meaning, statement,
+  and pinned links (thesis blob + v1.0 PDF, lean4 blob at 5045d005, src)
+  per rule. Every [R: ID] in the chapters now links to its anchor. Gate 8
+  fails CI when the appendix is stale or a link target is wrong; gate 2
+  now requires exactly one Claim; chapters 9/10/12 claim-tests gained grep
+  needles; every References entry now carries a verified URL; CI gained a
+  lychee link check (403 accepted: DOI bot walls).
+- Checks after: `bun run verify` green end to end, all 12 Try-it outputs
+  byte-identical, every external URL verified live (one 403 bot wall at
+  dl.acm.org; the DOI resolves).
+
+Meaning: the gates held the machine-checkable spine — zero broken
+citations, zero Try-it drift — while five registry legs and three prose
+numbers were quietly wrong. That is exactly the gap between "the anchor
+resolves as a string" and "the anchor says what the book says it says".
+The citation gate now checks one level deeper, and the tags finally face
+the reader.
+
+## 2026-10-16 — The other 21 rules, and the substring gate that hid them
+
+Asked: the first audit sampled 14 of 37 rules. What is in the other 21?
+
+Nine more errors, four of them wrong rather than weak:
+
+- **DEFEQ-ARGS cited the wrong function.** It named `is_def_eq_app`, the
+  congruence *fallback* reached only after lazy delta fails
+  (type_checker.cpp:1230, after :1206). The cheap argument test that runs
+  *before* unfolding — which is what the rule id says and what chapter 5's
+  prose describes — is `is_def_eq_args`, called at :1039 inside
+  `lazy_delta_reduction_step`. Repointed to it; the chapter needed no edit
+  once the registry told the truth.
+- **DEFEQ-ETA-STRUCT** cited `try_eta_struct`, a call site at :1236; the
+  definition is `try_eta_struct_core` at :889. Same shape as `nat_lit_ext`.
+- **RED-QUOT** cited `quot_reduce_rec` to type_checker.cpp, which only
+  calls it at :395; it is defined in quot.h:39. quot.h was not in
+  fetch-vendor-sources.sh at all, so citing it correctly also meant
+  vendoring it — added, re-fetched, byte-identical to upstream.
+- **WF-NAME-FRESH's note** said the rule is implicit in "the thesis's
+  notion of an environment as a function". The thesis never uses the word
+  environment: `grep -ril environment vendor/lean-type-theory/` returns
+  nothing. What it does say (axioms.tex:98) is that a constant declaration
+  introduces "a new name". Its meaning also claimed arena forgeries
+  redeclare `Nat.rec`; 135_dup_rec_def contains no `Nat` at all.
+- Corrected as misleading: **LVL-LEQ** (the kernel does *not* decide level
+  equality by two-way inequality, and `is_geq` has exactly one caller —
+  the inductive universe bound), **LVL-NORM** (the thesis has no level
+  normalization anywhere), **RED-NAT** (gcd, mod, div and the bitwise ops
+  are unbounded; and no local arena test targets the bounds, contrary to
+  the note and to this notebook's earlier, looser claim), **WF-THM-PROP**
+  (the kernel stores and unfolds theorem values — declaration.h:467 —
+  erasure is the compiler's), **WF-IND-SPEC** (the mutual-block checks it
+  described live in `check_inductive_types`, not `check_constructors`),
+  **WF-QUOT** (the kernel's four are Quot/mk/lift/ind; the thesis's fourth
+  is `sound`, which arrives as an ordinary axiom), **DEFEQ-UNIT-LIKE**,
+  **WF-DEF-VAL** (an unmeasured "most of the checker's time").
+- **My own ch03 gloss was wrong too.** Fixing LVL-LEQ exposed it: the
+  sentence I added earlier the same day said the checker decides the
+  inequality "with a case-split rule on each variable ... so trying both
+  covers all instantiations". `is_geq_core` has no substitution and no
+  case split. The chapter now attributes the case split to the published
+  theory and says the kernel implements a cheaper descent that refuses
+  some true inequalities and accepts no false ones.
+
+The root cause was one line: gate 5 resolved a symbol with
+`text.includes(symbol)`. That accepts a substring of a longer identifier,
+a bare call site, and a symbol defined in a different file. Tightened to
+require a definition-shaped match (line start, optional return type or
+qualifier chain containing no `=`, `(` or `;`, a word boundary, then the
+symbol and its parameter list). Validated both ways: all 37 corrected
+rules pass, and five negative controls fail, including every error shape
+found today.
+
+Gate negative tests, run for the first time rather than asserted: each of
+the six new or changed checks was given a mutation and had to go red —
+stale appendix, registry edited without regenerating, citation linked to
+the wrong anchor, citation left unlinked, a second Claim block, and a
+claim-test needle absent from its evidence file. All six caught, each with
+the right message; baseline restored green afterwards.
+
+Meaning: the first audit's lesson was that a resolving anchor can still be
+the wrong anchor. The second one sharpens it: 14 of 37 rules was not
+enough to conclude anything about the other 23, and the one mechanical
+check standing behind all 111 citation legs was the weakest link in the
+chain. Two of today's nine errors were introduced or propagated by the
+same session that was fixing the others, which is the argument for the
+gate rather than for more care.
+
 ## Open questions
 
 - ~~What is the arena submission interface?~~ Answered: a PR to
