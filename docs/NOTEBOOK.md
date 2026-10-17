@@ -531,6 +531,55 @@ chain. Two of today's nine errors were introduced or propagated by the
 same session that was fixing the others, which is the argument for the
 gate rather than for more care.
 
+## 2026-10-17 — README rewritten; every claim in it re-measured today
+
+Asked: rewrite README.md for a reader who has never heard of this, lead
+with the book, and verify every number and command in it rather than
+quoting this file.
+
+Re-ran, on this machine, everything the new README asserts:
+
+- `bun check` clean; `bun test` **36 pass, 1255 expect() calls**, 75 ms.
+- `bun run book:gates` green: 12 chapters, 37 rules, 32 terms.
+- `bun test tests/forgery.test.ts` **10 pass**, 33 ms.
+- `bun run book/tryit/ch01.ts` prints `(fun x : Nat => (f x))` / `nodes: 5`.
+- `./run.sh vendor/good/init-prelude.ndjson` silent, exit 0, 0.37 s.
+- `./run.sh vendor/bad/tutorial/054_indNeg.ndjson` and
+  `./run.sh book/forgeries/WF-IND-POS.ndjson` both print the positivity
+  refusal and exit **1** (identical files; the forgery is that arena test).
+- `bun run scripts/arena.ts` with defaults: **198/199**.
+  `magma-list-deep-n36` is recorded `crashed` at 60.5 s because the
+  default timeout is 60 s and run.sh sets a 16 GB worker heap.
+- `bun run scripts/arena.ts --timeout 240 --jobs 6 --exclude
+  magma-list-deep-n36`: **198/198** (good 126/126, bad 72/72).
+  app-lam 10.0 s, magma-list-pair-n21 50.3 s, both within noise of
+  2026-10-15.
+- `TEAN_WORKER_HEAP_MB=48000 ./run.sh
+  vendor/good/perf/magma-list-deep-n36.ndjson` under `/usr/bin/time -l`:
+  **accepted, 99.39 s real, 17,292,574,720 bytes max RSS** (16.1 GiB,
+  quoted as 17.3 GB decimal in the README).
+
+Correction to the 2026-10-15 entry's shorthand. That row said "111 s with
+a 48 GB Node heap (it aborts at 16 GB)", which reads as though the test
+needs 48 GB. It does not. Resident usage is 17.3 GB; 48 GB is the
+*ceiling* that has to be set so the collector does not abort near the
+limit. So 199/199 holds, and the condition for it is one env var, not a
+96 GB machine. The README states it that way.
+
+Also measured, for positioning rather than correctness: the hosted arena
+board now lists **27 checkers** (Rust, Python, Haskell, Java, Fortran,
+COBOL, and others). None are in TypeScript or JavaScript. The 14 vendored
+Lean kernel C++ files total **6,198 lines**; `src/` totals **5,120**.
+
+Link check: all 18 external URLs in the new README return 200
+(`curl -s -o /dev/null -w '%{http_code}' -L`), and the three relative
+links resolve. The thesis repository is `digama0/lean-type-theory`;
+`lean4-type-theory` 404s, so any future citation must use the former.
+
+Meaning: the README now makes no claim this file cannot back, and the one
+headline that would have drawn fire on Zulip ("faster than the official
+kernel") carries its scope and its counterweight in the same table.
+
 ## Open questions
 
 - ~~What is the arena submission interface?~~ Answered: a PR to
