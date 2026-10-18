@@ -1,22 +1,12 @@
 # tean
 
 A Lean 4 proof checker written in TypeScript, and a fourteen-chapter book
-about building it that is wired to CI so the two cannot drift apart.
+about building it.
 
 Lean's kernel is the part of a proof assistant that has to be right. The
 editor, the elaborator, the tactic engine and the compiler are all allowed
-to emit garbage, because each of them has to hand its output to the kernel
-before anything is believed. The kernel is small on purpose: the 14 source
-files this port was read against come to 6,198 lines of C++. That makes it
-one of the few pieces of load-bearing software a single person can read end
-to end.
-
-This repository is what happened after reading it. 5,120 lines of
-TypeScript that re-check Lean proofs from scratch, and a book that teaches
-you to do the same. The [Lean Kernel Arena](https://arena.lean-lang.org/)
-ships 27 checker definitions — the official kernel and 26 independent
-reimplementations, in Rust, Python, Haskell, Java, Fortran and COBOL.
-None of them are in TypeScript.
+to emit unsound output, because each of them has to hand its result to the
+kernel before anything is believed.
 
 ---
 
@@ -27,42 +17,7 @@ TypeScript developer who has never opened a proof assistant. Chapters 1–9
 are the theory; no Lean syntax appears before chapter 10. Each chapter
 makes one claim, names the file that backs it, and names the chapter that
 follows. [book/NOTATION.md](book/NOTATION.md) is the one-page card of
-every symbol and term, with how to say each one out loud.
-
-### Every rule is defined by what it refuses
-
-Most writing about type theory states a rule and asks you to accept that
-it matters. This book ships the counterexample instead.
-
-Chapter 6 covers strict positivity: a constructor may not take an argument
-that mentions the type being defined in a negative position. Here is what
-the checker does with a declaration that breaks the rule.
-
-```
-$ ./run.sh book/forgeries/WF-IND-POS.ndjson
-FAIL [inductive] indNeg: arg #1 of 'indNeg.mk' has a non positive occurrence of the datatypes being declared
-$ echo $?
-1
-```
-
-`src/kernel/weaken.ts` can switch off exactly one named rule and nothing
-else. With `WF-IND-POS` switched off, that same file is **accepted**, and
-the classic route to a proof of `False` is open.
-`tests/forgery.test.ts` asserts both halves for five rules, so a
-decorative rule would fail the suite. The rule is not described as
-load-bearing. It is shown to be, in a test that runs in 33 ms.
-
-```sh
-bun test tests/forgery.test.ts   # 10 tests: five rules, both halves
-```
-
-Two honesty notes the book insists on, and so does this file. One of the
-five, `WF-THM-PROP`, is a hygiene rule rather than a soundness rule, and
-its weakened acceptance proves nothing false; chapter 13 explains why the
-difference matters. And this checker refuses the inductive forgeries twice
-over, once by the named rule and once by deriving recursors instead of
-trusting the export, so those weakened runs disable the second net too, as
-the historical attacks assumed. `book/forgeries/README.md` has the table.
+every symbol and term, with the pronunciation of each.
 
 ### The book cites its sources, and CI resolves the citations
 
@@ -138,7 +93,7 @@ tar -xzf /tmp/arena.tar.gz -C vendor
 
 Exit codes follow the Arena convention: 0 accept, 1 reject, 2 decline,
 anything else is a bug in the checker. A clean accept prints nothing,
-because that is what the Arena harness wants.
+because that is what the Arena harness expects.
 
 ### 4. The whole suite, and a real Lean library
 
@@ -177,29 +132,18 @@ TEAN_WORKER_HEAP_MB=48000 ./run.sh vendor/good/perf/magma-list-deep-n36.ndjson
 # accepted in 99.4 s, 17.3 GB resident
 ```
 
-The heap ceiling has to be raised well above the 17.3 GB actually used,
-or the collector aborts. Other checkers pass that test in 2.2 to 35 s
-inside 10 GB, so bytes per expression node is an open problem here, not
-the algorithm.
+The heap ceiling has to be raised well above the 17.3 GB the run
+consumes, or the collector aborts. Other checkers pass that test in 2.2 to
+35 s inside 10 GB, so bytes per expression node is an open problem here,
+not the algorithm.
 
 The `init` result is one corpus on one machine, not a general speed claim,
 and `std` is the counterweight. Churn profiling attributes most of the
 `std` gap to symbolic evaluation inside `Std.Tactic.BVDecide` proofs,
 where tens of millions of reduction steps unfold
-`DHashMap.Internal.Raw₀.insert` over free variables and the official
-kernel somehow does not. That gap is the top-ranked open question about
-this checker; chapter 12 states it in those terms rather than rounding it
-off.
-
-## What is not claimed
-
-The checker has not been submitted to the Arena. `checker.yaml` is a
-draft and its `url` and `rev` are still placeholders.
-
-The book has not been read by a stranger. Think-aloud sessions, the
-posttest against the bar in `docs/PLAN.md`, and an independent fact check
-are all open rows in the notebook, and chapter 14 says so in print. A book
-that grades its own readability has not been graded.
+`DHashMap.Internal.Raw₀.insert` over free variables while the official
+kernel does not. That gap is the top-ranked open question about this
+checker; chapter 12 states it in those terms rather than rounding it off.
 
 ## Layout
 
@@ -228,11 +172,11 @@ worth doing that way. It is not the only one.
 Roughly in order of how much they teach per line of code.
 
 - **The exporter, not the checker.** Write your own `lean4export`. You
-  meet the term representation from the producing side, which is where
-  the awkward parts live.
+  meet the term representation from the producing side, where its
+  irregularities are hardest to avoid.
 - **The pretty-printer and delaborator.** Terms back to readable syntax.
   Much shorter than a checker, and it forces you to understand implicit
-  arguments and binder naming, which most tutorials wave through.
+  arguments and binder naming, which most tutorials omit.
 - **`Decidable` and `decide`.** The bridge from a proposition to a
   computation. Small, self-contained, and the clearest short answer to
   why a proof can be a program.
@@ -242,15 +186,15 @@ Roughly in order of how much they teach per line of code.
   instantiation. This is the machinery the kernel deliberately does not
   have, and the reason it stays small.
 - **The unifier and the elaborator.** Why the kernel is 6,000 lines and
-  the elaborator is enormous. Higher-order unification is where the
-  difficulty actually sits.
+  the elaborator is orders of magnitude larger. Higher-order unification
+  is where the difficulty resides.
 - **The macro and syntax system.** A Pratt parser that users extend at
   compile time, in the language itself.
 - **`BVDecide`.** A SAT solver emits an LRAT certificate and the kernel
   re-checks it. The clearest example in the whole system of "do not trust
-  the tool, check the artifact". It is also the thing costing this checker
-  13x on `std`, so it is not a toy exercise.
-- **The `.olean` module format and import resolution.** Unglamorous, and
+  the tool, check the artifact". It is also what costs this checker 13x on
+  `std`, so the exercise has immediate consequences here.
+- **The `.olean` module format and import resolution.** Routine work, and
   immediately useful if you want to read a Lean build without running
   Lean.
 - **The compiler path**, lcnf down to C. Explicitly outside the trusted
