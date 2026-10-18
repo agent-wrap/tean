@@ -104,7 +104,7 @@ current state belongs in `NOTEBOOK.md`, not in a chapter.
 - When chapters exist: every claim names a test that exists, every reference
   resolves with a wrap-aware checker, no term is used before it is defined,
   every `Try it` block runs in CI and its printed output matches the text,
-  and every chapter names the next one.
+  and every chapter links to the next.
 
 ## Assumptions, each with the measurement that settles it
 

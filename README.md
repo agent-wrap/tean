@@ -15,8 +15,8 @@ kernel before anything is believed.
 **[Start at book/ch01.md](book/ch01.md).** Fourteen chapters for a
 TypeScript developer who has never opened a proof assistant. Chapters 1–9
 are the theory; no Lean syntax appears before chapter 10. Each chapter
-makes one claim, names the file that backs it, and names the chapter that
-follows. [book/NOTATION.md](book/NOTATION.md) is the one-page card of
+makes one claim, names the file that backs it, and ends with a link to
+the next. [book/NOTATION.md](book/NOTATION.md) is the one-page card of
 every symbol and term, with the pronunciation of each.
 
 ### The book cites its sources, and CI resolves the citations

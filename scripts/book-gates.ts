@@ -4,8 +4,9 @@
  *
  * Gates:
  *  1. Fourteen chapters exist, each at most 250 lines.
- *  2. Reading order: each chapter has a Claim and names the next chapter
- *     by its real title.
+ *  2. Exactly one Claim per chapter, each chapter ends with a link to the
+ *     next by its real title and filename, and every "Chapter N" mention
+ *     points at a chapter that exists.
  *  3. Every chapter's claim names an evidence file (and a string that
  *     must appear in it): <!-- gate:claim-test path[::grep] -->
  *  4. Every `Try it` block equals its file under book/tryit/, runs, and
@@ -35,6 +36,7 @@
  */
 import { readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { basename } from "node:path";
 import { generateRulesAppendix, loadRegistry } from "./gen-rules-appendix.ts";
 import { generateNotationCard, loadTerms } from "./gen-notation-card.ts";
 
@@ -104,15 +106,17 @@ for (const [i, path] of chapterPaths.entries()) {
   });
 }
 
-// Gate 2: exactly one claim, next-chapter reference matches the real title.
+// Gate 2: one claim, a resolving next-chapter link, and no dangling
+// cross-reference. The link is checked as a link, not as prose: a chapter
+// that renames itself breaks the previous chapter's footer, and CI says so.
 for (const ch of chapters) {
   const claims = (ch.text.match(/\*\*Claim\.\*\*/g) ?? []).length;
   if (claims !== 1) fail(`${ch.path} has ${claims} **Claim.** blocks (must be exactly 1)`);
   if (ch.num < CHAPTER_COUNT) {
     const next = chapters.find((c) => c.num === ch.num + 1);
     if (next !== undefined) {
-      const expected = `Chapter ${next.num} — ${next.title}`;
-      if (!ch.joined.includes(expected)) fail(`${ch.path} must name "${expected}" as next`);
+      const expected = `[Chapter ${next.num} — ${next.title}](${basename(next.path)})`;
+      if (!ch.joined.includes(expected)) fail(`${ch.path} must end with the link ${expected}`);
     }
   }
   // Every "Chapter N" mention must point at a chapter that exists.
@@ -291,9 +295,9 @@ for (const id of ruleIds) {
 }
 
 // Gate 7: no forward references.
-// Chapter titles are exempt: gate 2 REQUIRES each chapter to name the
-// next one by its real title, so "Next: Chapter 7 — Structures and
-// projections" must not count as a use of "structure".
+// Chapter titles are exempt: a title names its own subject, so the
+// heading "Chapter 7 — Structures and projections" must not count as a
+// use of "structure".
 const titles = chapters.map((c) => `Chapter ${c.num} — ${c.title}`);
 const withoutTitles = (s: string): string => titles.reduce((acc, t) => acc.split(t).join(" "), s);
 const terms = loadTerms();

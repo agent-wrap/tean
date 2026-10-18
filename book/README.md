@@ -1,7 +1,8 @@
 # How to build a Lean proof checker — and know that it is right
 
 Fourteen chapters for a TypeScript developer who has never met a proof
-assistant. Start at [ch01.md](ch01.md); every chapter names the next one.
+assistant. Start at [ch01.md](ch01.md); every chapter ends with a link to
+the next.
 Keep [the notation card](NOTATION.md) open beside them — one page with
 every symbol and every piece of jargon, how to say it out loud, and the
 chapter that earns it.
@@ -52,7 +53,8 @@ against the registry.
 
 1. Fourteen chapters, 250 lines of prose each at most (exercises are
    held to their own standard, below), one claim per chapter.
-2. Reading order: each chapter names the next by its real title.
+2. Reading order: each chapter ends with a link to the next by its real
+   title and filename, and every chapter cross-reference resolves.
 3. Every claim names an evidence file that exists and says what the
    chapter says it says.
 4. Every `Try it` block is a real file under [tryit/](tryit/), typechecked
