@@ -11,7 +11,9 @@
     "way. `thesis: null` means the rule is a kernel extension that the",
     "thesis does not model; `note` says what it is instead.",
     "`forgery` names the weakening flag and artifact of the negative-space",
-    "demonstration in tests/forgery.test.ts (book chapter 11)."
+    "demonstration in tests/forgery.test.ts (book chapter 11).",
+    "`divergence` marks a deliberate behavioural difference from the",
+    "C++ kernel; the named doc must carry a heading for the rule."
   ],
   "rules": [
     {
@@ -20,9 +22,18 @@
       "kind": "typing",
       "statement": "|- Sort l : Sort (l+1)",
       "meaning": "The type of a universe is the next universe. This ladder has no top; chapter 3 shows why it cannot have one.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Typing}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_type_core" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferTypeCore" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Typing}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_type_core"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferTypeCore"
+      }
     },
     {
       "id": "T-VAR",
@@ -30,9 +41,18 @@
       "kind": "typing",
       "statement": "G |- A : Sort l  =>  G, x:A |- x : A, and with weakening, (x : A) in G  =>  G |- x : A",
       "meaning": "A variable has the type its binder gave it. The checker replaces a bound variable with a free variable before it looks the type up. The thesis states the rule for the last binder plus weakening; the derived form that reads the type out of the context appears in its regularity section.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Typing}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_fvar" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferFVar" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Typing}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_fvar"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferFVar"
+      }
     },
     {
       "id": "T-CONST",
@@ -40,9 +60,18 @@
       "kind": "typing",
       "statement": "|- c.{ls} : type(c)[ls/us]",
       "meaning": "A constant's type comes from the environment, with its universe parameters instantiated by the levels at the use site.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "Definitions ($\\delta$ reduction)" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_constant" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferConstant" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "Definitions ($\\delta$ reduction)"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_constant"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferConstant"
+      }
     },
     {
       "id": "T-APP",
@@ -50,9 +79,18 @@
       "kind": "typing",
       "statement": "G |- f : forall x:A. B   G |- a : A'   G |- A' == A  =>  G |- f a : B[a/x]",
       "meaning": "Application checks the argument type against the domain up to definitional equality, then substitutes. This is where the conversion rule does its work: the thesis states application and conversion as two separate rules, and the kernel fuses them here.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Typing}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_app" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferApp" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Typing}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_app"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferApp"
+      }
     },
     {
       "id": "T-LAM",
@@ -60,9 +98,18 @@
       "kind": "typing",
       "statement": "G, x:A |- e : B  =>  G |- (fun x:A => e) : forall x:A. B",
       "meaning": "A lambda gets a pi type. The checker opens the binder with a free variable, infers the body, and closes the result.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Typing}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_lambda" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferLambda" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Typing}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_lambda"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferLambda"
+      }
     },
     {
       "id": "T-PI",
@@ -70,9 +117,18 @@
       "kind": "typing",
       "statement": "G |- A : Sort l1   G, x:A |- B : Sort l2  =>  G |- (forall x:A. B) : Sort (imax l1 l2)",
       "meaning": "A pi type lives in the imax of its parts. imax, not max: a function into a proposition is itself a proposition.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Typing}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_pi" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferPi" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Typing}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_pi"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferPi"
+      }
     },
     {
       "id": "T-LET",
@@ -80,9 +136,18 @@
       "kind": "typing",
       "statement": "G |- v : A   G |- e[v/x] : B  =>  G |- (let x : A := v; e) : B",
       "meaning": "A let body may use the definitional equality x == v, so the checker records the value in the local context instead of forgetting it.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "binders ($\\zeta$ reduction)" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_let" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferLet" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "binders ($\\zeta$ reduction)"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_let"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferLet"
+      }
     },
     {
       "id": "T-PROJ",
@@ -92,8 +157,14 @@
       "meaning": "A projection types each field by walking the constructor type, substituting earlier projections for earlier fields. Prop-valued structures may only project Prop fields.",
       "thesis": null,
       "note": "The thesis's term language has no projections (Lean 3 defined them via recursors); the Lean 4 kernel types them directly as a primitive.",
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_proj" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferProj" }
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_proj"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferProj"
+      }
     },
     {
       "id": "T-LIT",
@@ -103,8 +174,14 @@
       "meaning": "Literals are a kernel extension for efficiency: a number is one node, not a tower of Nat.succ. The kernel bounds their size.",
       "thesis": null,
       "note": "Kernel extension, newer than the thesis. The size bound is LEAN_NAT_MAX_SIZE in the C++ kernel.",
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "infer_lit" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inferLit" }
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "infer_lit"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inferLit"
+      }
     },
     {
       "id": "LVL-LEQ",
@@ -112,9 +189,18 @@
       "kind": "level",
       "statement": "l >= l', by a syntactic descent through max, imax and numeric offsets. The thesis states the judgment l <= l' + n, including a case split on u := 0 and u := S u, which the kernel does not implement",
       "meaning": "Level inequality, decided syntactically on normalized levels. The thesis derives level equality from two-way inequality; the kernel decides equality by LVL-NORM instead and uses this test only for the universe bound on data declarations (WF-IND-UNIV). Skipping the case split refuses some true inequalities and accepts no false ones.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Definitional equality}" },
-      "kernel": { "file": "vendor/lean4-level.cpp", "symbol": "is_geq" },
-      "src": { "file": "src/kernel/level.ts", "symbol": "isGeq" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Definitional equality}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-level.cpp",
+        "symbol": "is_geq"
+      },
+      "src": {
+        "file": "src/kernel/level.ts",
+        "symbol": "isGeq"
+      }
     },
     {
       "id": "LVL-NORM",
@@ -122,9 +208,18 @@
       "kind": "level",
       "statement": "l == l'  iff  l <= l' and l' <= l, decided as normalize(l) = normalize(l')",
       "meaning": "The thesis specifies level equality as two-way inequality. The kernel decides the same relation by normalize-then-compare: flatten maxes, sort, drop dominated entries. The normalization procedure itself is kernel implementation; the thesis does not model it.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Definitional equality}" },
-      "kernel": { "file": "vendor/lean4-level.cpp", "symbol": "is_equivalent" },
-      "src": { "file": "src/kernel/level.ts", "symbol": "isEquivalent" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Definitional equality}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-level.cpp",
+        "symbol": "is_equivalent"
+      },
+      "src": {
+        "file": "src/kernel/level.ts",
+        "symbol": "isEquivalent"
+      }
     },
     {
       "id": "LVL-IMAX",
@@ -132,9 +227,18 @@
       "kind": "level",
       "statement": "imax(l, 0) = 0    imax(l, S m) = max(l, S m)",
       "meaning": "imax collapses to zero when its right side is zero. This one function makes impredicative Prop and predicative Type coexist.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Definitional equality}" },
-      "kernel": { "file": "vendor/lean4-level.cpp", "symbol": "mk_imax" },
-      "src": { "file": "src/kernel/level.ts", "symbol": "mkIMax" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Definitional equality}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-level.cpp",
+        "symbol": "mk_imax"
+      },
+      "src": {
+        "file": "src/kernel/level.ts",
+        "symbol": "mkIMax"
+      }
     },
     {
       "id": "RED-BETA",
@@ -142,9 +246,18 @@
       "kind": "reduction",
       "statement": "(fun x:A => e) a ~> e[a/x]",
       "meaning": "Beta is the engine of computation. The implementation discharges a whole application spine in one substitution pass; one argument at a time is quadratic.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Reduction}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "whnf_core" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "whnfCore" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Reduction}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "whnf_core"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "whnfCore"
+      }
     },
     {
       "id": "RED-ZETA",
@@ -152,9 +265,18 @@
       "kind": "reduction",
       "statement": "(let x : A := v; e) ~> e[v/x]",
       "meaning": "Zeta unfolds a let. There are no congruence rules for let: the kernel unfolds it whenever it must look inside.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "binders ($\\zeta$ reduction)" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "whnf_core" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "whnfCore" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "binders ($\\zeta$ reduction)"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "whnf_core"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "whnfCore"
+      }
     },
     {
       "id": "RED-DELTA",
@@ -162,9 +284,18 @@
       "kind": "reduction",
       "statement": "c.{ls} ~> value(c)[ls/us]",
       "meaning": "Delta unfolds a definition. Unfolding is lazy and height-directed: compare heights, unfold the taller side first, and try a cheap congruence before unfolding both.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "Definitions ($\\delta$ reduction)" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "lazy_delta_reduction_step" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "lazyDeltaReductionStep" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "Definitions ($\\delta$ reduction)"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "lazy_delta_reduction_step"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "lazyDeltaReductionStep"
+      }
     },
     {
       "id": "RED-IOTA",
@@ -172,9 +303,18 @@
       "kind": "reduction",
       "statement": "rec C e p (ctor b) ~> e_ctor b v",
       "meaning": "Iota fires a recursor on a constructor: pick the rule for that constructor, apply it to the fields, and recurse through v.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "The computation rule ($\\iota$ reduction)" },
-      "kernel": { "file": "vendor/lean4-inductive.h", "symbol": "inductive_reduce_rec" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "inductiveReduceRec" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "The computation rule ($\\iota$ reduction)"
+      },
+      "kernel": {
+        "file": "vendor/lean4-inductive.h",
+        "symbol": "inductive_reduce_rec"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "inductiveReduceRec"
+      }
     },
     {
       "id": "RED-K",
@@ -182,10 +322,23 @@
       "kind": "reduction",
       "statement": "For a subsingleton eliminator: rec C e p h ~> e_ctor b v, for ANY proof h, when the types agree",
       "meaning": "K-like reduction is proof irrelevance fused with iota: replace the major premise by the unique constructor without looking at it. The defeq guard on the types is load-bearing.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "K-like reduction" },
-      "kernel": { "file": "vendor/lean4-inductive.h", "symbol": "to_cnstr_when_K" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "toCnstrWhenK" },
-      "forgery": { "flag": "RED-K-GUARD", "artifact": "book/forgeries/RED-K-GUARD.ndjson", "soundness": true }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "K-like reduction"
+      },
+      "kernel": {
+        "file": "vendor/lean4-inductive.h",
+        "symbol": "to_cnstr_when_K"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "toCnstrWhenK"
+      },
+      "forgery": {
+        "flag": "RED-K-GUARD",
+        "artifact": "book/forgeries/RED-K-GUARD.ndjson",
+        "soundness": true
+      }
     },
     {
       "id": "RED-QUOT",
@@ -193,9 +346,18 @@
       "kind": "reduction",
       "statement": "Quot.lift f h (Quot.mk r a) ~> f a, and likewise Quot.ind",
       "meaning": "The quotient computation rule. The thesis calls quotient types a semi-builtin axiom because of exactly this rule: a computational rule rather than a constant, with only Quot.sound counted as the axiom proper.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsubsection{Quotient types}" },
-      "kernel": { "file": "vendor/lean4-quot.h", "symbol": "quot_reduce_rec" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "quotReduceRec" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsubsection{Quotient types}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-quot.h",
+        "symbol": "quot_reduce_rec"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "quotReduceRec"
+      }
     },
     {
       "id": "RED-NAT",
@@ -205,8 +367,18 @@
       "meaning": "Literal arithmetic is a kernel extension: evaluate on big integers instead of unary towers. The size-increasing operations (add, sub, mul, pow, shiftLeft) are bounded, and those bounds are themselves refusal rules.",
       "thesis": null,
       "note": "Kernel extension, newer than the thesis. The size bound is LEAN_NAT_MAX_SIZE in the C++ kernel; gcd, mod, div and the bitwise operations are left unbounded because their result cannot outgrow their input. No test in the local arena suite targets the bounds: the one nat-literal forgery there attacks the arithmetic itself.",
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "reduce_nat" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "reduceNat" }
+      "divergence": {
+        "summary": "reduceNat runs ungated inside the lazy-delta loop; the C++ kernel gates it on !has_fvar for both sides. Cost-only, completeness-increasing, sound because reduceNat fails unless both arguments evaluate to literals.",
+        "doc": "docs/DIVERGENCES.md"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "reduce_nat"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "reduceNat"
+      }
     },
     {
       "id": "RED-PROJ",
@@ -216,8 +388,14 @@
       "meaning": "Projecting a field out of a literal constructor application returns that field.",
       "thesis": null,
       "note": "The thesis's term language has no projections; the kernel reduces them directly.",
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "reduce_proj" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "reduceProj" }
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "reduce_proj"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "reduceProj"
+      }
     },
     {
       "id": "DEFEQ-BINDING",
@@ -225,9 +403,18 @@
       "kind": "defeq",
       "statement": "A == A'   e == e' under x:A  =>  (fun x:A => e) == (fun x:A' => e'), and likewise for forall",
       "meaning": "Congruence under a binder. Binder names and binder infos do not participate: equality ignores them, so the hash must too.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Definitional equality}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "is_def_eq_binding" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "isDefEqBinding" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Definitional equality}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "is_def_eq_binding"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "isDefEqBinding"
+      }
     },
     {
       "id": "DEFEQ-ARGS",
@@ -235,9 +422,18 @@
       "kind": "defeq",
       "statement": "f == f'   a_i == a'_i  =>  f as == f' as'  (algorithmic form; the thesis's congruence rule adds a typing premise)",
       "meaning": "Congruence on application spines, argument by argument. This is the cheap test that runs before expensive unfolding: lazy delta tries it on two applications of the same constant and skips the unfold when it succeeds. The separate congruence fallback at the end of the equality chain (is_def_eq_app) runs only after unfolding has failed.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Definitional equality}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "is_def_eq_args" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "isDefEqArgs" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Definitional equality}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "is_def_eq_args"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "isDefEqArgs"
+      }
     },
     {
       "id": "DEFEQ-ETA",
@@ -245,9 +441,18 @@
       "kind": "defeq",
       "statement": "(fun x:A => f x) == f",
       "meaning": "Eta: a function equals its own one-step wrapper. The kernel implements it by expanding the non-lambda side.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Definitional equality}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "try_eta_expansion_core" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "tryEtaExpansion" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Definitional equality}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "try_eta_expansion_core"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "tryEtaExpansion"
+      }
     },
     {
       "id": "DEFEQ-ETA-STRUCT",
@@ -257,8 +462,14 @@
       "meaning": "Structure eta: an element of a structure equals the constructor applied to its own projections. It fires only when one side is already a saturated constructor application, and only when the two sides' types agree definitionally.",
       "thesis": null,
       "note": "Added to Lean after the thesis. Arena tests 112 and 113 target its edge cases.",
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "try_eta_struct_core" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "tryEtaStruct" }
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "try_eta_struct_core"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "tryEtaStruct"
+      }
     },
     {
       "id": "DEFEQ-PROOF-IRREL",
@@ -266,9 +477,18 @@
       "kind": "defeq",
       "statement": "G |- p : Prop   G |- h : p   G |- h' : p  =>  G |- h == h'",
       "meaning": "Any two proofs of one proposition are equal. This single rule makes algorithmic equality non-transitive and ideal equality undecidable.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsection{Definitional equality}" },
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "is_def_eq_proof_irrel" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "isDefEqProofIrrel" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsection{Definitional equality}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "is_def_eq_proof_irrel"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "isDefEqProofIrrel"
+      }
     },
     {
       "id": "DEFEQ-UNIT-LIKE",
@@ -278,19 +498,31 @@
       "meaning": "Unit-like definitional equality: a structure with no fields has one element up to defeq.",
       "thesis": null,
       "note": "Kernel extension. A corollary of structure eta, but a separate rule: eta needs one side to be a constructor application, and this rule fires when neither is. Arena tests 108-111.",
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "is_def_eq_unit_like" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "isDefEqUnitLike" }
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "is_def_eq_unit_like"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "isDefEqUnitLike"
+      }
     },
     {
       "id": "DEFEQ-STRING",
       "name": "string literal expansion",
       "kind": "defeq",
       "statement": "strLit s == String.ofList [chars of s]",
-      "meaning": "A string literal equals its constructor form. The rule targets String.ofList, not String.mk: a fact read from the kernel source, not from memory.",
+      "meaning": "A string literal equals its constructor form. The rule targets String.ofList. The C++ variable holding that constant is still named g_string_mk, after the constructor an older kernel used; the value it is initialized with is String.ofList.",
       "thesis": null,
-      "note": "Kernel extension. See docs/NOTEBOOK.md, hypothesis H7.",
-      "kernel": { "file": "vendor/lean4-type_checker.cpp", "symbol": "try_string_lit_expansion" },
-      "src": { "file": "src/kernel/tc.ts", "symbol": "tryStringLitExpansion" }
+      "note": "Kernel extension; the thesis does not model string literals.",
+      "kernel": {
+        "file": "vendor/lean4-type_checker.cpp",
+        "symbol": "try_string_lit_expansion"
+      },
+      "src": {
+        "file": "src/kernel/tc.ts",
+        "symbol": "tryStringLitExpansion"
+      }
     },
     {
       "id": "WF-DECL-TYPE",
@@ -298,9 +530,18 @@
       "kind": "wellformedness",
       "statement": "A declaration's type must itself check, with a sort as its type, using only the declared universe parameters; the kernel additionally requires the parameter list be duplicate-free",
       "meaning": "Before a name enters the environment, its stated type is checked. A type whose type is not a sort is data, not a type.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "Definitions ($\\delta$ reduction)" },
-      "kernel": { "file": "vendor/lean4-environment.cpp", "symbol": "check_constant_val" },
-      "src": { "file": "src/checker.ts", "symbol": "checkConstantVal" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "Definitions ($\\delta$ reduction)"
+      },
+      "kernel": {
+        "file": "vendor/lean4-environment.cpp",
+        "symbol": "check_constant_val"
+      },
+      "src": {
+        "file": "src/checker.ts",
+        "symbol": "checkConstantVal"
+      }
     },
     {
       "id": "WF-DEF-VAL",
@@ -308,9 +549,18 @@
       "kind": "wellformedness",
       "statement": "def c : A := e is admissible when |- e : A' and A' == A",
       "meaning": "A definition's value must have the declared type, up to definitional equality. The profiles of chapter 10 land inside the equality work this check drives.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "Definitions ($\\delta$ reduction)" },
-      "kernel": { "file": "vendor/lean4-environment.cpp", "symbol": "add_definition" },
-      "src": { "file": "src/checker.ts", "symbol": "addDecl" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "Definitions ($\\delta$ reduction)"
+      },
+      "kernel": {
+        "file": "vendor/lean4-environment.cpp",
+        "symbol": "add_definition"
+      },
+      "src": {
+        "file": "src/checker.ts",
+        "symbol": "addDecl"
+      }
     },
     {
       "id": "WF-THM-PROP",
@@ -320,9 +570,19 @@
       "meaning": "A theorem's type must be a proposition. This is hygiene, not soundness: the value is still checked, so no forgery follows from dropping it. The forgery gate shows the weakened kernel accepting the file; chapter 11 argues why nothing false follows.",
       "thesis": null,
       "note": "Not in the thesis, which has only definitions and primitive constants. It is a Lean convention: a theorem's value is a proof, so the elaborator may check it asynchronously and the compiler erases it. The kernel itself still stores and unfolds that value.",
-      "kernel": { "file": "vendor/lean4-environment.cpp", "symbol": "add_theorem" },
-      "src": { "file": "src/checker.ts", "symbol": "addDecl" },
-      "forgery": { "flag": "WF-THM-PROP", "artifact": "book/forgeries/WF-THM-PROP.ndjson", "soundness": false }
+      "kernel": {
+        "file": "vendor/lean4-environment.cpp",
+        "symbol": "add_theorem"
+      },
+      "src": {
+        "file": "src/checker.ts",
+        "symbol": "addDecl"
+      },
+      "forgery": {
+        "flag": "WF-THM-PROP",
+        "artifact": "book/forgeries/WF-THM-PROP.ndjson",
+        "soundness": false
+      }
     },
     {
       "id": "WF-NAME-FRESH",
@@ -332,8 +592,14 @@
       "meaning": "Redeclaration is refused. Several arena forgeries are nothing but a second declaration of one name: a definition given the name reserved for a recursor, or a constructor and a recursor sharing one.",
       "thesis": null,
       "note": "Implicit in the thesis, which requires a constant declaration to introduce a new name; it never models an environment explicitly.",
-      "kernel": { "file": "vendor/lean4-environment.cpp", "symbol": "check_name" },
-      "src": { "file": "src/kernel/env.ts", "symbol": "checkName" }
+      "kernel": {
+        "file": "vendor/lean4-environment.cpp",
+        "symbol": "check_name"
+      },
+      "src": {
+        "file": "src/kernel/env.ts",
+        "symbol": "checkName"
+      }
     },
     {
       "id": "WF-IND-SPEC",
@@ -341,9 +607,18 @@
       "kind": "wellformedness",
       "statement": "Each constructor is a telescope of arguments ending in the inductive type applied to the declaration's parameters, unchanged, and to indices that may not mention the types being declared",
       "meaning": "The shape rules for the constructors of an inductive declaration: each one returns the type being declared, with the parameters passed through untouched. The sibling check over the declaration's types enforces the whole-block rules — parameters agree across a mutual block, and all of its types share one universe.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsubsection{Inductive specifications}" },
-      "kernel": { "file": "vendor/lean4-inductive.cpp", "symbol": "check_constructors" },
-      "src": { "file": "src/kernel/inductive.ts", "symbol": "checkConstructors" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsubsection{Inductive specifications}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-inductive.cpp",
+        "symbol": "check_constructors"
+      },
+      "src": {
+        "file": "src/kernel/inductive.ts",
+        "symbol": "checkConstructors"
+      }
     },
     {
       "id": "WF-IND-POS",
@@ -351,10 +626,23 @@
       "kind": "wellformedness",
       "statement": "A recursive argument must have the form forall z::g. t e, with t never to the left of an arrow",
       "meaning": "Strict positivity. A constructor argument that consumes the type being declared lets one element encode a function out of the whole type, and Cantor refuses.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsubsection{Inductive specifications}" },
-      "kernel": { "file": "vendor/lean4-inductive.cpp", "symbol": "check_positivity" },
-      "src": { "file": "src/kernel/inductive.ts", "symbol": "checkPositivity" },
-      "forgery": { "flag": "WF-IND-POS", "artifact": "book/forgeries/WF-IND-POS.ndjson", "soundness": true }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsubsection{Inductive specifications}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-inductive.cpp",
+        "symbol": "check_positivity"
+      },
+      "src": {
+        "file": "src/kernel/inductive.ts",
+        "symbol": "checkPositivity"
+      },
+      "forgery": {
+        "flag": "WF-IND-POS",
+        "artifact": "book/forgeries/WF-IND-POS.ndjson",
+        "soundness": true
+      }
     },
     {
       "id": "WF-IND-UNIV",
@@ -362,10 +650,23 @@
       "kind": "wellformedness",
       "statement": "For each constructor argument of type b : Sort l', require imax(l', l) <= l, where Sort l is the result",
       "meaning": "A constructor may not smuggle a bigger universe into a smaller type. This is the rule that stands between Lean and Girard's paradox.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsubsection{Inductive specifications}" },
-      "kernel": { "file": "vendor/lean4-inductive.cpp", "symbol": "check_constructors" },
-      "src": { "file": "src/kernel/inductive.ts", "symbol": "checkConstructors" },
-      "forgery": { "flag": "WF-IND-UNIV", "artifact": "book/forgeries/WF-IND-UNIV.ndjson", "soundness": true }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsubsection{Inductive specifications}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-inductive.cpp",
+        "symbol": "check_constructors"
+      },
+      "src": {
+        "file": "src/kernel/inductive.ts",
+        "symbol": "checkConstructors"
+      },
+      "forgery": {
+        "flag": "WF-IND-UNIV",
+        "artifact": "book/forgeries/WF-IND-UNIV.ndjson",
+        "soundness": true
+      }
     },
     {
       "id": "WF-LARGE-ELIM",
@@ -373,9 +674,18 @@
       "kind": "wellformedness",
       "statement": "The motive may range over Sort u only when the type is not a proposition, or is a subsingleton",
       "meaning": "Large elimination. A proposition with two constructors must not compute data, or Bool-valued proofs distinguish proofs that irrelevance says are equal.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsubsection{Large elimination}" },
-      "kernel": { "file": "vendor/lean4-inductive.cpp", "symbol": "elim_only_at_universe_zero" },
-      "src": { "file": "src/kernel/inductive.ts", "symbol": "elimOnlyAtUniverseZero" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsubsection{Large elimination}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-inductive.cpp",
+        "symbol": "elim_only_at_universe_zero"
+      },
+      "src": {
+        "file": "src/kernel/inductive.ts",
+        "symbol": "elimOnlyAtUniverseZero"
+      }
     },
     {
       "id": "WF-REC-DERIVE",
@@ -383,10 +693,23 @@
       "kind": "wellformedness",
       "statement": "The recursor's type and computation rules are DERIVED from the inductive declaration, never read from the input (the thesis gives the type here and the iota rules in the following subsubsection)",
       "meaning": "A recursor is not an axiom. The checker derives its own and compares the export against it; a forged recursor proves False in one line.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsubsection{The recursor}" },
-      "kernel": { "file": "vendor/lean4-inductive.cpp", "symbol": "declare_recursors" },
-      "src": { "file": "src/kernel/inductive.ts", "symbol": "declareRecursors" },
-      "forgery": { "flag": "WF-REC-DERIVE", "artifact": "book/forgeries/WF-REC-DERIVE.ndjson", "soundness": true }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsubsection{The recursor}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-inductive.cpp",
+        "symbol": "declare_recursors"
+      },
+      "src": {
+        "file": "src/kernel/inductive.ts",
+        "symbol": "declareRecursors"
+      },
+      "forgery": {
+        "flag": "WF-REC-DERIVE",
+        "artifact": "book/forgeries/WF-REC-DERIVE.ndjson",
+        "soundness": true
+      }
     },
     {
       "id": "WF-QUOT",
@@ -394,9 +717,18 @@
       "kind": "wellformedness",
       "statement": "The four quotient primitives — Quot, Quot.mk, Quot.lift, Quot.ind — are built by the kernel itself, after checking that Eq has its canonical form",
       "meaning": "Exported quotient types are decoration: the checker constructs the canonical four and compares. The thesis's fourth constant is Quot.sound, which reaches the kernel as an ordinary axiom instead.",
-      "thesis": { "file": "vendor/lean-type-theory/axioms.tex", "anchor": "subsubsection{Quotient types}" },
-      "kernel": { "file": "vendor/lean4-quot.cpp", "symbol": "add_quot" },
-      "src": { "file": "src/kernel/quot.ts", "symbol": "addQuot" }
+      "thesis": {
+        "file": "vendor/lean-type-theory/axioms.tex",
+        "anchor": "subsubsection{Quotient types}"
+      },
+      "kernel": {
+        "file": "vendor/lean4-quot.cpp",
+        "symbol": "add_quot"
+      },
+      "src": {
+        "file": "src/kernel/quot.ts",
+        "symbol": "addQuot"
+      }
     }
   ]
 }

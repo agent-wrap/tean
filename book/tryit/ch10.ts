@@ -1,56 +1,58 @@
-// Chapter 10 — The cost.
-// The cache experiment: identity keys miss what reduction rebuilds.
+// Chapter 10 — The real input.
+// From here on the exercises use the real checker, not a sketch.
+// Run from the repository root: bun book/tryit/ch10.ts
 
-import { Name } from "../../src/kernel/name.ts";
-import { type Expr, Const, App, exprEq } from "../../src/kernel/expr.ts";
+import { ExportParser } from "../../src/export/parser.ts";
+import { Checker, tryStep } from "../../src/checker.ts";
 
-// Reduction rebuilds equal terms as FRESH objects. Simulate that:
-function build(): Expr {
-  const f = new Const(Name.simple("f"), []);
-  const a = new Const(Name.simple("a"), []);
-  let e: Expr = a;
-  for (let i = 0; i < 10; i++) e = new App(f, e);
-  return e;
+// Real lines in lean4export NDJSON format (version 3.1.0). Tables of
+// names, levels, and expressions build up by index; a declaration line
+// then refers into them. Index 0 is predeclared: the anonymous name,
+// the level zero — never written on a line, and a parser that waits to
+// be told about it will index out of bounds on the first declaration.
+const file = [
+  '{"meta":{"exporter":{"name":"lean4export","version":"3.1.0"},' +
+    '"format":{"version":"3.1.0"},"lean":{"githash":"5045d005","version":"4.34.1"}}}',
+  '{"in":1,"str":{"pre":0,"str":"Nat"}}', // name 1 = "Nat"
+  '{"in":2,"str":{"pre":0,"str":"big"}}', // name 2 = "big"
+  '{"il":1,"succ":0}', // level 1 = succ 0
+  '{"ie":0,"sort":1}', // expr 0 = Sort 1, i.e. Type
+  '{"axiom":{"name":1,"levelParams":[],"type":0,"isUnsafe":false}}', // axiom Nat : Type
+  '{"ie":1,"const":{"name":1,"us":[]}}', // expr 1 = Nat
+  // natVal is a STRING in the format: 2^128 does not fit a JSON number.
+  '{"ie":2,"natVal":"340282366920938463463374607431768211456"}',
+  '{"def":{"name":2,"levelParams":[],"type":1,"value":2,' +
+    '"hints":"abbrev","safety":"safe","all":[2]}}', // def big : Nat := 2^128
+  '{"axiom":{"name":2,"levelParams":[],"type":9,"isUnsafe":false}}', // two lies at once
+];
+
+const parser = new ExportParser();
+const checker = new Checker();
+
+for (const [i, line] of file.entries()) {
+  const parsed = tryStep(() => parser.processLine(line));
+  if (!parsed.ok) {
+    const tag = parsed.error.kind === "refusal" ? parsed.error.code : "bug";
+    console.log(`line ${String(i + 1).padStart(2)}: refused at parse (${tag})`);
+    continue;
+  }
+  if (parsed.value === null) continue; // a table line, not a declaration
+  const decl = parsed.value;
+  const name = decl.kind === "inductive" ? "..." : decl.name.toString();
+  const checked = tryStep(() => { checker.addDecl(decl); });
+  const v = checked.ok
+    ? "accepted"
+    : `refused (${checked.error.kind === "refusal" ? checked.error.code : "bug"})`;
+  console.log(`line ${String(i + 1).padStart(2)}: ${decl.kind} ${name} — ${v}`);
 }
 
-const first = build();
-const rebuilt = build(); // equal tree, all-new object identities
-console.log(`exprEq(first, rebuilt)    : ${exprEq(first, rebuilt)}`);
-console.log(`same object?              : ${first === rebuilt}`);
-console.log(`hashes agree?             : ${first.hash === rebuilt.hash}`);
+console.log(`declarations checked: ${checker.declsChecked}`);
+console.log(`format version seen : ${parser.meta?.format.version ?? "none"}`);
 
-// Cache 1: identity-keyed, the JavaScript default.
-const identityCache = new Map<Expr, string>();
-identityCache.set(first, "cached result");
-console.log(`identity cache hit        : ${identityCache.has(rebuilt)}`);
-
-// Cache 2: hash buckets + structural equality, as the kernel's expr_map.
-class StructuralMap {
-  private buckets = new Map<number, { k: Expr; v: string }[]>();
-  set(k: Expr, v: string): void {
-    const b = this.buckets.get(k.hash) ?? [];
-    if (b.length === 0) this.buckets.set(k.hash, b);
-    b.push({ k, v });
-  }
-  get(k: Expr): string | undefined {
-    for (const e of this.buckets.get(k.hash) ?? []) {
-      if (e.k === k || exprEq(e.k, k)) return e.v;
-    }
-    return undefined;
-  }
-}
-const structuralCache = new StructuralMap();
-structuralCache.set(first, "cached result");
-console.log(`structural cache hit      : ${structuralCache.get(rebuilt) !== undefined}`);
-
-// The measured consequence, from docs/NOTEBOOK.md (2026-10-15): with
-// identity-keyed whnf/infer/defeq caches, the arena test
-// discarded-argument-match ran out of memory. With structural keys it
-// finished in 1.4 seconds. Same algorithm; the only change is the line
-// above that can say "yes" to an object it has never met.
-
-// To break it: make StructuralMap.get compare with === only, and watch
-// the hit turn false. Then consider the quieter failure: a hash that
-// includes what equality ignores (binder names, for instance) sends
-// equal terms to different buckets, and the cache silently never hits.
-// The hash must forget exactly what the equality forgets.
+// To break it: change natVal's value to a plain JSON number and watch
+// precision silently die before the kernel ever sees the term — then
+// put it back. The parser must read the bytes the exporter wrote, not
+// the bytes a JavaScript number can hold. The last line already breaks
+// on purpose: it reuses the name `big` AND cites expression index 9,
+// which no line declared. The parser refuses it first (parse), and had
+// it slipped through, the environment would refuse the duplicate name.

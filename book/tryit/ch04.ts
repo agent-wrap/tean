@@ -43,6 +43,11 @@ function instantiate(e: Expr, a: Expr, depth = 0): Expr {
 const env = new Map<string, Expr>();
 
 // Weak head normal form, with a step log.
+// NOTE: this sketch substitutes ONE argument per beta step, because that
+// is the short way to write it. The real checker collects the whole
+// application spine first and instantiates all of its arguments in a
+// single pass over the body — see the chapter's rule 1. One at a time
+// re-walks the body once per argument, which is quadratic in the spine.
 function whnf(e: Expr, log: string[]): Expr {
   if (e.kind === "app" && e.fn.kind === "lam") {
     log.push("beta");
@@ -94,7 +99,7 @@ run("((fun => #0) two) g", app(app(lam(T, bvar(0)), cnst("two")), cnst("g")));
 
 // To break it: make whnf reduce inside lam bodies too (full
 // normalization). Every answer stays "the same" up to computation — and
-// chapter 10 measures the price: real proofs reach reduction depths in
+// chapter 12 measures the price: real proofs reach reduction depths in
 // the tens of thousands, and eager reduction does all of that work even
 // when the first head symbol already decides the comparison.
 

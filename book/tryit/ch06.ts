@@ -63,11 +63,21 @@ verdict("mk (arg: t -> Bool)", [arrow(self, other("Bool"))]);
 // Hidden one level deeper, still caught:
 verdict("mk2 (arg: (t -> Bool) -> Nat)", [arrow(arrow(self, other("Bool")), other("Nat"))]);
 
+// Now the same shape in the type system you already use. TypeScript has
+// no positivity rule, because a type system that only has to not crash
+// does not need one:
+type Bad = (x: Bad) => boolean;
+const notMe: Bad = (x) => !x(x); // Cantor's diagonal, written out
+console.log(`\nTypeScript accepts   type Bad = (x: Bad) => boolean`);
+console.log(`and with it           notMe = (x) => !x(x)   : ${typeof notMe}`);
+console.log(`notMe(notMe) does not terminate, so it is never called here.`);
+
 // To break it: accept `mk : (t -> Bool) -> t` and follow the arithmetic.
 // Each element of t now carries a function t -> Bool. That gives an
 // injection from functions-out-of-t into t itself, and Cantor's diagonal
-// builds the impossible member out of it — in a proof assistant, that
-// impossibility is a provable False. Chapter 11 runs this exact attack
-// against the real checker, twice: once refused, once with the rule off.
+// builds the impossible member out of it — exactly the `notMe` above. In
+// a programming language that is a hang; in a proof assistant it is a
+// provable False. Chapter 13 runs this attack against the real checker,
+// twice: once refused, once with the rule off.
 
 export {}; // keeps this file a self-contained module

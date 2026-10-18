@@ -1283,14 +1283,15 @@ export class TypeChecker {
       const r = this.isDefEqOffset(tn, sn);
       if (r !== Lbool.Undef) return { t: tn, s: sn, result: r };
 
-      // The C++ kernel gates this on `!has_fvar` for both sides, as a cost
-      // guard. That gate is SYNTACTIC: a let-bound fvar makes hasFVar true
-      // while the term is definitionally closed, and skipping reduceNat
-      // here sends `Nat.beq` into its unary `._f` form — measured at
-      // ~4.3e9 reduction steps on Char.ofOrdinal._proof_3 in the real
-      // `init` corpus (docs/NOTEBOOK.md 2026-10-16). reduceNat is sound
-      // with fvars present: it returns null unless both arguments whnf to
-      // literals. EXPERIMENT: run it ungated; the arena suite judges.
+      // DIVERGENCE [R: RED-NAT]: the C++ kernel gates this on `!has_fvar`
+      // for both sides, as a cost guard. That gate is SYNTACTIC: a
+      // let-bound fvar makes hasFVar true while the term is definitionally
+      // closed, and skipping reduceNat here sends `Nat.beq` into its unary
+      // `._f` form — measured at ~4.3e9 reduction steps on
+      // Char.ofOrdinal._proof_3 in the real `init` corpus. We run it
+      // ungated; it returns null unless both arguments whnf to literals,
+      // so it can only fail sooner, never answer differently.
+      // Full reasoning and evidence: docs/DIVERGENCES.md.
       {
         const tV = this.reduceNat(tn);
         if (tV !== null) return { t: tn, s: sn, result: toLbool(this.isDefEqCore(tV, sn)) };

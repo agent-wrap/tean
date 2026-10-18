@@ -3,7 +3,7 @@
  * every failure names its file. Run: bun run scripts/book-gates.ts
  *
  * Gates:
- *  1. Twelve chapters exist, each at most 250 lines.
+ *  1. Fourteen chapters exist, each at most 250 lines.
  *  2. Reading order: each chapter has a Claim and names the next chapter
  *     by its real title.
  *  3. Every chapter's claim names an evidence file (and a string that
@@ -12,7 +12,9 @@
  *     prints exactly the chapter's expected output.
  *  5. The rule registry (book/rules.json) resolves totally: src symbols,
  *     vendored kernel symbols, vendored thesis anchors, forgery artifacts
- *     and their flags in tests/forgery.test.ts and src/kernel/weaken.ts.
+ *     and their flags in tests/forgery.test.ts and src/kernel/weaken.ts,
+ *     and — for a rule marked `divergence` — a heading naming it in the
+ *     divergences document.
  *  6. Rule citations: every [R: ID] in book/ and src/ exists in the
  *     registry; every registry rule is cited by at least one chapter.
  *  7. No forward references: each term in book/terms.json first occurs in
@@ -20,15 +22,30 @@
  *  8. The appendix: book/RULES.md equals a fresh generation from the
  *     registry, every chapter citation is a link whose target is its own
  *     RULES.md anchor, and no citation is left unlinked.
+ *  9. The notation card: book/NOTATION.md equals a fresh generation from
+ *     book/terms.json.
  *
  * Reference scanning is wrap-aware: chapters are scanned as joined text,
  * so a citation broken across a line wrap is still found (and a stray
- * half-citation still fails). Run scripts/fetch-vendor-sources.sh first
- * on a fresh clone; vendor/ is not committed.
+ * half-citation still fails).
+ *
+ * Gate 5 needs the vendored sources, which are not committed. On a fresh
+ * clone this script says so in one line and stops, rather than reporting
+ * every unresolvable citation as a separate failure.
  */
 import { readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { generateRulesAppendix, loadRegistry } from "./gen-rules-appendix.ts";
+import { generateNotationCard, loadTerms } from "./gen-notation-card.ts";
+
+// A fresh clone has no vendor/. Without it every registry citation fails
+// at once, which reads like a broken project rather than a missing step.
+const VENDOR_WITNESSES = ["vendor/lean4-type_checker.cpp", "vendor/lean-type-theory"];
+const missingVendor = VENDOR_WITNESSES.filter((p) => !existsSync(p));
+if (missingVendor.length > 0) {
+  console.error(`vendor sources absent (${missingVendor[0] ?? ""}); run: scripts/fetch-vendor-sources.sh`);
+  process.exit(1);
+}
 
 let failures = 0;
 function fail(msg: string): void {
@@ -40,15 +57,24 @@ function read(path: string): string {
   return readFileSync(path, "utf8");
 }
 
-const chapterPaths = Array.from({ length: 12 }, (_, i) => `book/ch${String(i + 1).padStart(2, "0")}.md`);
+const CHAPTER_COUNT = 14;
+const chapterPaths = Array.from({ length: CHAPTER_COUNT }, (_, i) => `book/ch${String(i + 1).padStart(2, "0")}.md`);
 
 interface Chapter {
   path: string;
   num: number;
   text: string;
   joined: string; // wrap-aware: newlines become spaces
+  prose: string; // wrap-aware, with fenced blocks removed
   title: string;
 }
+
+/** The cap is on PROSE, which is what a reader has to hold in their head.
+ *  An exercise is held to its own standard — it must typecheck, run, and
+ *  print what the chapter says — so counting its lines here would only
+ *  push authors toward smaller exercises. */
+const PROSE_CAP = 250;
+const stripFences = (s: string): string => s.replace(/```[\s\S]*?```/g, "");
 
 const chapters: Chapter[] = [];
 for (const [i, path] of chapterPaths.entries()) {
@@ -58,7 +84,8 @@ for (const [i, path] of chapterPaths.entries()) {
   }
   const text = read(path);
   const lines = text.split("\n");
-  if (lines.length > 251) fail(`${path} has ${lines.length - 1} lines (cap: 250)`);
+  const proseLines = stripFences(text).split("\n").length - 1;
+  if (proseLines > PROSE_CAP) fail(`${path} has ${proseLines} prose lines (cap: ${PROSE_CAP})`);
   const h1 = /^# Chapter (\d+) — (.+)$/.exec(lines[0] ?? "");
   if (h1 === null || Number(h1[1]) !== i + 1) {
     fail(`${path} first line must be "# Chapter ${i + 1} — <title>"`);
@@ -66,14 +93,22 @@ for (const [i, path] of chapterPaths.entries()) {
   }
   // Joined text is wrap-aware: line breaks and quote-block markers
   // disappear, so a reference split across wrapped lines is still seen.
-  chapters.push({ path, num: i + 1, text, joined: text.replace(/\n>?\s*/g, " "), title: h1[2] ?? "" });
+  const joined = text.replace(/\n>?\s*/g, " ");
+  chapters.push({
+    path,
+    num: i + 1,
+    text,
+    joined,
+    prose: stripFences(text).replace(/\n>?\s*/g, " "),
+    title: h1[2] ?? "",
+  });
 }
 
 // Gate 2: exactly one claim, next-chapter reference matches the real title.
 for (const ch of chapters) {
   const claims = (ch.text.match(/\*\*Claim\.\*\*/g) ?? []).length;
   if (claims !== 1) fail(`${ch.path} has ${claims} **Claim.** blocks (must be exactly 1)`);
-  if (ch.num < 12) {
+  if (ch.num < CHAPTER_COUNT) {
     const next = chapters.find((c) => c.num === ch.num + 1);
     if (next !== undefined) {
       const expected = `Chapter ${next.num} — ${next.title}`;
@@ -83,7 +118,7 @@ for (const ch of chapters) {
   // Every "Chapter N" mention must point at a chapter that exists.
   for (const m of ch.joined.matchAll(/[Cc]hapter (\d+)/g)) {
     const n = Number(m[1]);
-    if (n < 1 || n > 12) fail(`${ch.path} references chapter ${n}, which does not exist`);
+    if (n < 1 || n > CHAPTER_COUNT) fail(`${ch.path} references chapter ${n}, which does not exist`);
   }
 }
 
@@ -154,6 +189,7 @@ interface Rule {
   kernel: Cite;
   src: Cite;
   forgery?: { flag: string; artifact: string };
+  divergence?: { summary: string; doc: string };
 }
 const registry = (JSON.parse(read("book/rules.json")) as { rules: Rule[] }).rules;
 const ruleIds = new Set(registry.map((r) => r.id));
@@ -203,6 +239,7 @@ function checkCite(id: string, what: string, cite: Cite): void {
 
 const weakenSrc = read("src/kernel/weaken.ts");
 const forgeryTests = read("tests/forgery.test.ts");
+const divergenceDocs = new Set<string>();
 for (const r of registry) {
   checkCite(r.id, "src", r.src);
   checkCite(r.id, "kernel", r.kernel);
@@ -211,6 +248,26 @@ for (const r of registry) {
     if (!existsSync(r.forgery.artifact)) fail(`${r.id}: forgery artifact missing: ${r.forgery.artifact}`);
     if (!weakenSrc.includes(`"${r.forgery.flag}"`)) fail(`${r.id}: flag ${r.forgery.flag} not in src/kernel/weaken.ts`);
     if (!forgeryTests.includes(r.forgery.flag)) fail(`${r.id}: flag ${r.forgery.flag} not tested in tests/forgery.test.ts`);
+  }
+  // A documented divergence must be documented: the named file needs a
+  // heading for this rule, so "we match the kernel except here" is a
+  // claim the build can check rather than a claim the author remembers.
+  if (r.divergence !== undefined) {
+    divergenceDocs.add(r.divergence.doc);
+    if (!existsSync(r.divergence.doc)) {
+      fail(`${r.id}: divergence doc missing: ${r.divergence.doc}`);
+    } else if (!new RegExp(`^## ${r.id}\\b`, "m").test(read(r.divergence.doc))) {
+      fail(`${r.id}: ${r.divergence.doc} has no "## ${r.id}" heading`);
+    }
+  }
+}
+// ...and the other direction: no heading there for a rule that is not
+// marked divergent in the registry.
+const divergentIds = new Set(registry.filter((r) => r.divergence !== undefined).map((r) => r.id));
+for (const doc of divergenceDocs) {
+  for (const m of read(doc).matchAll(/^## ([A-Z][A-Z0-9-]+)\b/gm)) {
+    const id = m[1] ?? "";
+    if (!divergentIds.has(id)) fail(`${doc} documents "${id}", which no registry rule marks as divergent`);
   }
 }
 
@@ -234,13 +291,29 @@ for (const id of ruleIds) {
 }
 
 // Gate 7: no forward references.
-const terms = (JSON.parse(read("book/terms.json")) as { terms: Record<string, number> }).terms;
-for (const [term, definedIn] of Object.entries(terms)) {
+// Chapter titles are exempt: gate 2 REQUIRES each chapter to name the
+// next one by its real title, so "Next: Chapter 7 — Structures and
+// projections" must not count as a use of "structure".
+const titles = chapters.map((c) => `Chapter ${c.num} — ${c.title}`);
+const withoutTitles = (s: string): string => titles.reduce((acc, t) => acc.split(t).join(" "), s);
+const terms = loadTerms();
+let exempt = 0;
+for (const [term, entry] of Object.entries(terms)) {
+  if (entry.chapter < 1 || entry.chapter > CHAPTER_COUNT) {
+    fail(`term "${term}" names chapter ${entry.chapter}, which does not exist`);
+  }
+  // An opt-out must say why, so it stays an argued exception rather than
+  // a quiet way to make the gate green.
+  if (entry.gate === false) {
+    exempt++;
+    if ((entry.gateNote ?? "").length < 20) fail(`term "${term}" opts out of the gate without a gateNote`);
+    continue;
+  }
   const re = new RegExp(`(?<![A-Za-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i");
   for (const ch of chapters) {
-    if (re.test(ch.joined)) {
-      if (ch.num < definedIn) {
-        fail(`term "${term}" (defined in chapter ${definedIn}) first appears in ${ch.path}`);
+    if (re.test(withoutTitles(ch.joined))) {
+      if (ch.num < entry.chapter) {
+        fail(`term "${term}" (defined in chapter ${entry.chapter}) first appears in ${ch.path}`);
       }
       break;
     }
@@ -255,21 +328,35 @@ if (!existsSync(appendixPath)) {
 } else if (read(appendixPath) !== generateRulesAppendix(loadRegistry())) {
   fail(`${appendixPath} is stale (run: bun run scripts/gen-rules-appendix.ts)`);
 }
+// Prose only: inside a `Try it` block a rule tag is a source comment, in
+// the same style src/ uses, and markdown links do not belong in code.
+// Gate 6 above still requires those tags to name a real rule.
 for (const ch of chapters) {
-  for (const m of ch.joined.matchAll(/\[R: ([A-Z0-9-]+)\]\(([^)]*)\)/g)) {
+  for (const m of ch.prose.matchAll(/\[R: ([A-Z0-9-]+)\]\(([^)]*)\)/g)) {
     const id = m[1] ?? "";
     const target = m[2] ?? "";
     if (target !== `RULES.md#${id.toLowerCase()}`) {
       fail(`${ch.path} citation [R: ${id}] links to "${target}", expected RULES.md#${id.toLowerCase()}`);
     }
   }
-  for (const m of ch.joined.matchAll(/\[R: ([A-Z0-9-]+)\](?!\()/g)) {
+  for (const m of ch.prose.matchAll(/\[R: ([A-Z0-9-]+)\](?!\()/g)) {
     fail(`${ch.path} citation [R: ${m[1] ?? ""}] is not linked to the appendix`);
   }
+}
+
+// Gate 9: the notation card is a fresh generation from the term table.
+const notationPath = "book/NOTATION.md";
+if (!existsSync(notationPath)) {
+  fail(`${notationPath} missing (run: bun run scripts/gen-notation-card.ts)`);
+} else if (read(notationPath) !== generateNotationCard(terms)) {
+  fail(`${notationPath} is stale (run: bun run scripts/gen-notation-card.ts)`);
 }
 
 if (failures > 0) {
   console.error(`\n${failures} gate failure(s).`);
   process.exit(1);
 }
-console.log(`book gates: all green (${chapters.length} chapters, ${registry.length} rules, ${Object.keys(terms).length} terms)`);
+console.log(
+  `book gates: all green (${chapters.length} chapters, ${registry.length} rules, ` +
+    `${Object.keys(terms).length} terms, ${exempt} gate-exempt, ${divergentIds.size} documented divergence(s))`,
+);

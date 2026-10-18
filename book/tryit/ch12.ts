@@ -1,64 +1,56 @@
-// Chapter 12 — The arena.
-// The contract an outside judge holds a checker to: exit codes.
-// 0 accept, 1 reject, 2 decline, anything else is a checker bug.
+// Chapter 12 — The cost.
+// The cache experiment: identity keys miss what reduction rebuilds.
 
-import { ExportParser } from "../../src/export/parser.ts";
-import { Checker, tryStep, type CheckFailure } from "../../src/checker.ts";
+import { Name } from "../../src/kernel/name.ts";
+import { type Expr, Const, App, exprEq } from "../../src/kernel/expr.ts";
 
-function check(lines: string[]): { failures: CheckFailure[] } {
-  const parser = new ExportParser();
-  const checker = new Checker();
-  const failures: CheckFailure[] = [];
-  for (const line of lines) {
-    const step = tryStep(() => {
-      const d = parser.processLine(line);
-      if (d !== null) checker.addDecl(d);
-    });
-    if (!step.ok) failures.push(step.error);
+// Reduction rebuilds equal terms as FRESH objects. Simulate that:
+function build(): Expr {
+  const f = new Const(Name.simple("f"), []);
+  const a = new Const(Name.simple("a"), []);
+  let e: Expr = a;
+  for (let i = 0; i < 10; i++) e = new App(f, e);
+  return e;
+}
+
+const first = build();
+const rebuilt = build(); // equal tree, all-new object identities
+console.log(`exprEq(first, rebuilt)    : ${exprEq(first, rebuilt)}`);
+console.log(`same object?              : ${first === rebuilt}`);
+console.log(`hashes agree?             : ${first.hash === rebuilt.hash}`);
+
+// Cache 1: identity-keyed, the JavaScript default.
+const identityCache = new Map<Expr, string>();
+identityCache.set(first, "cached result");
+console.log(`identity cache hit        : ${identityCache.has(rebuilt)}`);
+
+// Cache 2: hash buckets + structural equality, as the kernel's expr_map.
+class StructuralMap {
+  private buckets = new Map<number, { k: Expr; v: string }[]>();
+  set(k: Expr, v: string): void {
+    const b = this.buckets.get(k.hash) ?? [];
+    if (b.length === 0) this.buckets.set(k.hash, b);
+    b.push({ k, v });
   }
-  return { failures };
+  get(k: Expr): string | undefined {
+    for (const e of this.buckets.get(k.hash) ?? []) {
+      if (e.k === k || exprEq(e.k, k)) return e.v;
+    }
+    return undefined;
+  }
 }
+const structuralCache = new StructuralMap();
+structuralCache.set(first, "cached result");
+console.log(`structural cache hit      : ${structuralCache.get(rebuilt) !== undefined}`);
 
-// The arena convention, as implemented at this checker's boundary:
-function exitCode(failures: CheckFailure[]): number {
-  if (failures.length === 0) return 0; // accept
-  return failures.every((f) => f.kind === "refusal") ? 1 : 3; // reject | bug
-}
+// The measured consequence, both numbers in docs/NOTEBOOK.md: on the
+// arena test `discarded-argument-match`, identity-keyed whnf, infer and
+// defeq caches exhaust memory; structural ones finish in 1.4 seconds.
+// Same algorithm. The only difference is the line above that can say
+// "yes" to an object it has never met.
 
-const meta =
-  '{"meta":{"exporter":{"name":"lean4export","version":"3.1.0"},' +
-  '"format":{"version":"3.1.0"},"lean":{"githash":"5045d005","version":"4.34.1"}}}';
-
-// A file the checker must accept: one honest axiom.
-const good = [
-  meta,
-  '{"in":1,"str":{"pre":0,"str":"T"}}',
-  '{"il":1,"succ":0}',
-  '{"ie":0,"sort":1}',
-  '{"axiom":{"name":1,"levelParams":[],"type":0,"isUnsafe":false}}',
-];
-
-// A file the checker must refuse: a theorem claiming to prove Type.
-const bad = [
-  meta,
-  '{"in":1,"str":{"pre":0,"str":"oops"}}',
-  '{"il":1,"succ":0}',
-  '{"ie":0,"sort":1}',
-  '{"thm":{"name":1,"levelParams":[],"type":0,"value":0,"all":[1]}}',
-];
-
-const g = check(good);
-const b = check(bad);
-console.log(`good file: exit ${exitCode(g.failures)}`);
-const first = b.failures[0];
-const code = first !== undefined && first.kind === "refusal" ? first.code : "?";
-console.log(`bad file : exit ${exitCode(b.failures)} [${code}]`);
-
-// The distinction the exit codes encode is the one chapter 10 paid for:
-// a refusal (1) and a crash (3) must never be confused, in either
-// direction. A checker that crashes on a forgery has not refused it.
-
-// To break it: return 1 from exitCode unconditionally. Every bad test
-// still "passes" — and so does every good test the checker actually
-// failed on. An oracle can only see what the contract lets it see; the
-// contract is therefore part of the kernel's trusted surface.
+// To break it: make StructuralMap.get compare with === only, and watch
+// the hit turn false. Then consider the quieter failure: a hash that
+// includes what equality ignores (binder names, for instance) sends
+// equal terms to different buckets, and the cache silently never hits.
+// The hash must forget exactly what the equality forgets.

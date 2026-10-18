@@ -115,29 +115,57 @@ function isProof(e: Expr, ctx: Expr[]): boolean {
   return ensureSort(infer(infer(e, ctx), ctx)) === 0;
 }
 
-function defEq(a0: Expr, b0: Expr, ctx: Expr[]): boolean {
-  const a = whnf(a0);
-  const b = whnf(b0);
-  // Proof irrelevance: two proofs of one proposition are equal, period.
-  if (isProof(a, ctx) && isProof(b, ctx) && defEq(infer(a, ctx), infer(b, ctx), ctx)) return true;
-  if (a.kind !== b.kind) return false;
+// The cheap attempt: structure only, no reduction, no inference.
+// It is THREE-valued. `undefined` means "not settled" — two constants
+// with different names may still unfold to the same thing, so a mismatch
+// here is a reason to reduce, never a reason to answer false.
+function quickDefEq(a: Expr, b: Expr, ctx: Expr[]): boolean | undefined {
+  if (a === b) return true; // the same object: free
+  if (a.kind !== b.kind) return undefined; // one side may yet reduce
   switch (a.kind) {
     case "sort":
       return a.level === (b as { level: number }).level;
     case "bvar":
       return a.idx === (b as { idx: number }).idx;
     case "const":
-      return a.name === (b as { name: string }).name;
-    case "app": {
-      const bb = b as { fn: Expr; arg: Expr };
-      return defEq(a.fn, bb.fn, ctx) && defEq(a.arg, bb.arg, ctx);
-    }
+      return a.name === (b as { name: string }).name ? true : undefined;
     case "lam":
     case "pi": {
+      // Congruence under binders: compare domains, then bodies with the
+      // domain pushed onto the context.
       const bb = b as { type: Expr; body: Expr };
       return defEq(a.type, bb.type, ctx) && defEq(a.body, bb.body, [a.type, ...ctx]);
     }
+    default:
+      return undefined; // an application spine is not a cheap question
   }
+}
+
+// The chain of attempts, cheap before expensive — the order IS the
+// algorithm, and it is the order the real kernel uses.
+function defEq(a0: Expr, b0: Expr, ctx: Expr[]): boolean {
+  // 1. Structural, with nothing reduced yet.
+  const quick = quickDefEq(a0, b0, ctx);
+  if (quick !== undefined) return quick;
+
+  // 2. Reduce both heads, then ask the cheap question again.
+  const a = whnf(a0);
+  const b = whnf(b0);
+  if (a !== a0 || b !== b0) {
+    const again = quickDefEq(a, b, ctx);
+    if (again !== undefined) return again;
+  }
+
+  // 3. Proof irrelevance, LAST of the single-step attempts because it is
+  // the dearest: two infer calls and a recursive defEq on their results.
+  // Two proofs of one proposition are equal, period.
+  if (isProof(a, ctx) && isProof(b, ctx) && defEq(infer(a, ctx), infer(b, ctx), ctx)) return true;
+
+  // 4. Congruence on an application spine.
+  if (a.kind === "app" && b.kind === "app") {
+    return defEq(a.fn, b.fn, ctx) && defEq(a.arg, b.arg, ctx);
+  }
+  return false;
 }
 
 function show(e: Expr): string {
@@ -169,10 +197,13 @@ console.log(`h1 == h2 (proofs of P)        : ${defEq(cnst("h1"), cnst("h2"), [])
 // ...but two different pieces of data of type T are not.
 console.log(`c1 == c2 (data in T)          : ${defEq(cnst("c1"), cnst("c2"), [])}`);
 
-// To break it: remove the proof-irrelevance line from defEq. h1 == h2
-// turns false — no false proof is accepted, but real libraries stop
-// checking, because dependent types compare proofs inside types all the
-// time. The rule is load-bearing for completeness, not for soundness.
-// Chapter 11 makes that distinction into a test you can run.
+// To break it: remove step 3 from defEq. h1 == h2 turns false — no false
+// proof is accepted, but real libraries stop checking, because dependent
+// types compare proofs inside types all the time. The rule is
+// load-bearing for completeness, not for soundness. Chapter 13 makes
+// that distinction into a test you can run.
+// Then break it the other way: move step 3 above step 1, and every
+// comparison in the program — including `#0` against `#0` — pays for two
+// type inferences before anyone looks at the two trees.
 
 export {}; // keeps this file a self-contained module

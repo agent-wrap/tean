@@ -58,17 +58,19 @@ function show(e: Expr): string {
 
 const T = cnst("T");
 // fun x => fun y => x y   is   fun => fun => #1 #0
-const twoBinders = lam(T, lam(T, app(bvar(1), bvar(0))));
+const inner = lam(T, app(bvar(1), bvar(0)));
+const twoBinders = lam(T, inner);
 console.log(show(twoBinders));
 
-// Open the outer binder with the constant c: #1 under one binder becomes c.
-console.log(show(instantiate(twoBinders.kind === "lam" ? twoBinders.body : T, cnst("c"))));
+// Open the outer binder with the constant c: `inner` is its body, and the
+// #1 inside it — one binder out — becomes c.
+console.log(show(instantiate(inner, cnst("c"))));
 
 // The capture case lift exists for: substitute (fun => #0 #1) for #0
 // UNDER a binder. The inner #1 must still point outside after the move.
 // The target #0 sits under that binder, so it appears as #1 there.
 const needsLift = lam(T, app(bvar(0), bvar(1)));
-console.log(show(instantiate(lam(T, app(bvar(1), bvar(0))), needsLift)));
+console.log(show(instantiate(inner, needsLift)));
 
 // To break it: delete the call to lift inside instantiate and rerun.
 // The last line changes: the moved #1 now points at the wrong binder.

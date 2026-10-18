@@ -1,6 +1,6 @@
 # tean
 
-A Lean 4 proof checker written in TypeScript, and a twelve-chapter book
+A Lean 4 proof checker written in TypeScript, and a fourteen-chapter book
 about building it that is wired to CI so the two cannot drift apart.
 
 Lean's kernel is the part of a proof assistant that has to be right. The
@@ -14,17 +14,20 @@ to end.
 This repository is what happened after reading it. 5,120 lines of
 TypeScript that re-check Lean proofs from scratch, and a book that teaches
 you to do the same. The [Lean Kernel Arena](https://arena.lean-lang.org/)
-lists 27 independent checkers, in Rust, Python, Haskell, Java, Fortran and
-COBOL. None of them are in TypeScript.
+ships 27 checker definitions — the official kernel and 26 independent
+reimplementations, in Rust, Python, Haskell, Java, Fortran and COBOL.
+None of them are in TypeScript.
 
 ---
 
 ## The book
 
-**[Start at book/ch01.md](book/ch01.md).** Twelve chapters for a
-TypeScript developer who has never opened a proof assistant. No Lean
-syntax appears before chapter 8. Each chapter makes one claim, names the
-file that backs it, and names the chapter that follows.
+**[Start at book/ch01.md](book/ch01.md).** Fourteen chapters for a
+TypeScript developer who has never opened a proof assistant. Chapters 1–9
+are the theory; no Lean syntax appears before chapter 10. Each chapter
+makes one claim, names the file that backs it, and names the chapter that
+follows. [book/NOTATION.md](book/NOTATION.md) is the one-page card of
+every symbol and term, with how to say each one out loud.
 
 ### Every rule is defined by what it refuses
 
@@ -55,7 +58,7 @@ bun test tests/forgery.test.ts   # 10 tests: five rules, both halves
 
 Two honesty notes the book insists on, and so does this file. One of the
 five, `WF-THM-PROP`, is a hygiene rule rather than a soundness rule, and
-its weakened acceptance proves nothing false; chapter 11 explains why the
+its weakened acceptance proves nothing false; chapter 13 explains why the
 difference matters. And this checker refuses the inductive forgeries twice
 over, once by the named rule and once by deriving recursors instead of
 trusting the export, so those weakened runs disable the second net too, as
@@ -69,19 +72,21 @@ the historical attacks assumed. `book/forgeries/README.md` has the table.
   vendored LaTeX source;
 - the Lean 4 kernel at githash `5045d005`, by C++ symbol;
 - this checker, by symbol in `src/`;
-- and for the soundness rules, its forgery.
+- for the soundness rules, its forgery;
+- and, where this checker deliberately does not match the C++ kernel, an
+  entry in [`docs/DIVERGENCES.md`](docs/DIVERGENCES.md) arguing the
+  difference. The gate checks that list in both directions.
 
 `scripts/book-gates.ts` runs in CI and fails the build when a citation
 does not resolve in either direction, when a chapter uses a term before
-the chapter that defines it, when a chapter runs past 250 lines or carries
-more than one claim, or when a `Try it` block's printed output differs by
-a byte from what the real file prints.
+the chapter that defines it, when a chapter runs past 250 lines of prose
+or carries more than one claim, or when a `Try it` block's printed output
+differs by a byte from what the real file prints.
 
-That gate is not a correctness guarantee, and the notebook records where
-it fell short. A review on 2026-10-16 found 14 citation errors the gate
-had passed, because an anchor resolving as a string is not the same as an
-anchor saying what the book claims it says. The gate now checks one level
-deeper. The errors and the fix are written up in `docs/NOTEBOOK.md`.
+A citation resolves only if the cited file *defines* the cited symbol. A
+string that merely occurs somewhere in the file is not a citation, and
+the gate rejects a call site, a comment, or a longer identifier that
+happens to contain the name.
 
 **[book/README.md](book/README.md)** lists all the gates.
 **[book/RULES.md](book/RULES.md)** is the generated appendix: every rule
@@ -114,7 +119,7 @@ It has no imports. Paste it into any TypeScript playground.
 devbox shell    # provides bun, node, elan
 bun install
 bun check       # typecheck: tsc, strict, erasable syntax only
-bun test        # 36 tests, 1255 assertions
+bun test        # 41 tests, 1267 assertions
 ```
 
 ### 3. One real proof, and one forgery
@@ -182,21 +187,9 @@ and `std` is the counterweight. Churn profiling attributes most of the
 `std` gap to symbolic evaluation inside `Std.Tactic.BVDecide` proofs,
 where tens of millions of reduction steps unfold
 `DHashMap.Internal.Raw₀.insert` over free variables and the official
-kernel somehow does not. That divergence is the top-ranked open question,
-and the churn dumps and the repro prefix are kept.
-
-Two kernel bugs were found by that same loop rather than by reading:
-
-- `Nat.beq` was being evaluated by unary recursion from around 2^32,
-  because a `has_fvar` gate copied from the C++ code starved the literal
-  fast path for let-bound variables. One non-terminating run became 5
-  seconds.
-- Deep nested literal arithmetic overflowed the stack through the mutual
-  recursion between `reduceNat` and `whnf`. Fixed with an explicit-stack
-  evaluator for the arithmetic spine.
-
-Chapter 10 keeps the dead guesses next to the measurements that killed
-them.
+kernel somehow does not. That gap is the top-ranked open question about
+this checker; chapter 12 states it in those terms rather than rounding it
+off.
 
 ## What is not claimed
 
@@ -205,7 +198,7 @@ draft and its `url` and `rev` are still placeholders.
 
 The book has not been read by a stranger. Think-aloud sessions, the
 posttest against the bar in `docs/PLAN.md`, and an independent fact check
-are all open rows in the notebook, and chapter 12 says so in print. A book
+are all open rows in the notebook, and chapter 14 says so in print. A book
 that grades its own readability has not been graded.
 
 ## Layout
@@ -214,10 +207,12 @@ that grades its own readability has not been graded.
   inductive validation, quotients
 - `src/export/` the NDJSON parser for `lean4export` files
 - `src/checker.ts`, `src/main.ts` declaration admission and the CLI
-- `book/` twelve chapters, the rule registry, the forgeries, the runnable
-  `Try it` files
+- `book/` fourteen chapters, the rule registry, the notation card, the
+  forgeries, the runnable `Try it` files
 - `docs/NOTEBOOK.md` the measurement record. Every number in every
   document in this repository traces to an entry here.
+- `docs/DIVERGENCES.md` every deliberate behavioural difference from the
+  C++ kernel, with its reasoning and its evidence
 - `docs/PLAN.md` the book's claim, reader, exit tasks, and gates
 
 ---
@@ -299,7 +294,7 @@ Start interactive, then go to source.
 ### Reading
 
 - **[Type Checking in Lean 4](https://ammkrn.github.io/type_checking_in_lean4/)**
-  covers the same ground as this book's chapters 1 to 7, from the other
+  covers the same ground as this book's chapters 1 to 9, from the other
   direction. Read it against ours and find where we disagree.
 - **[The Type Theory of Lean](https://github.com/digama0/lean-type-theory)**,
   Carneiro's thesis. The authority `book/rules.json` cites.

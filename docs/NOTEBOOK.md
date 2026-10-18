@@ -603,3 +603,114 @@ kernel") carries its scope and its counterweight in the same table.
 - The book's reader evidence: three to five think-aloud sessions, the
   posttest against the bar in PLAN.md, an independent fact check, and one
   non-programmer reader for chapters 1–3. None collected as of 2026-10-16.
+
+## 2026-10-17 — Independent editorial review, then the restructure it asked for
+
+An outside author reviewed the book at `8acb181`: read all chapters, ran
+the suite, fetched the vendored sources, and checked the factual claims
+against the Lean 4 kernel at the pinned githash. Their verification came
+back clean on the hard claims — `append_after`, `consume_type_annotations`,
+`m_unfold`, `LEAN_NAT_MAX_SIZE` all exist at `5045d005` in the roles the
+registry assigns them, and LVL-LEQ's "one caller" claim holds. The review
+was about the writing, with six named defects. Acted on, all of them:
+
+- **Twelve chapters became fourteen.** The review measured chapter 6 at
+  nine new concepts in 1,154 words, the worst point in the book for a
+  reader with no type theory. Split: ch06 keeps the contract review
+  (telescopes, parameters and indices, positivity, the universe bound,
+  large elimination, subsingletons), new **ch07 Structures and
+  projections** takes T-PROJ / RED-PROJ / DEFEQ-ETA-STRUCT /
+  DEFEQ-UNIT-LIKE, ch08 keeps recursor derivation and iota, new **ch09
+  Two more primitives** takes RED-K and the quotient. Old ch08–ch12 shift
+  to ch10–ch14.
+- **ch05's exercise contradicted ch05's text.** The chapter teaches
+  "cheap before expensive"; the exercise ran proof irrelevance — two
+  `infer` calls and a recursive `defEq` — ahead of the structural kind
+  check, the exact inversion. Rewritten as
+  quick → whnf → quick → proof irrelevance → spine congruence, mirroring
+  `isDefEqCore` in `src/kernel/tc.ts`. The cheap test is now three-valued
+  in the exercise too, which is the part that makes the order work.
+  Printed output unchanged, so the gate confirms the rewrite is
+  behaviour-preserving.
+- **ch01's first term encoded a bound variable as a const**, three lines
+  after defining a const as an environment lookup. Now labelled as the
+  cheat it is, with the forward pointer to ch02.
+- **ch03 called `(p : Prop) -> p` "the definition of falsehood"** and the
+  exercise claimed False/And/Or are impredicative encodings. Both wrong
+  for this system — they are inductives, as ch06 says. The motivating
+  example for `imax` is now `(n : Nat) -> n + 0 = n`, which needs no
+  Girard to feel, with the self-referential case kept as the second one.
+- **ch14 said "two real kernel bugs found in this project"** — those were
+  bugs in *this* checker, not in Lean's. Removed; see the content rule
+  below.
+- **No divergences document**, despite `reduceNat` running ungated in the
+  lazy-delta loop where the C++ kernel gates on `!has_fvar`. Now
+  `docs/DIVERGENCES.md`, with the registry able to mark a rule
+  `divergence` and a gate that checks the list in both directions: an
+  undocumented divergence fails, and a heading for a rule nobody marked
+  divergent fails too.
+
+Content rule adopted (also in PLAN.md): **the book describes the checker
+as it is and the type theory as it is; the history of how the code got
+here lives in this file.** Old ch09 ("The failure ranking": 152/199, the
+underscore, the ranked roots) and old ch10's dead-guess narrative were
+written as a development diary. Rewritten: ch11 is now about the kernel
+*conventions* a derive-and-compare port must match — why `u_1` and not
+`u1`, why annotation wrappers must be stripped — as facts about Lean,
+and ch12 states the current cost with the init headline the old chapter
+never printed (22.2 s against the official kernel's 35.1 s on the same
+machine) next to the 48 GB row and the std gap.
+
+Also landed from the review:
+
+- `book/NOTATION.md`, generated from `terms.json` by
+  `scripts/gen-notation-card.ts` and gated for freshness like RULES.md.
+  `terms.json` grew `symbol`, `say` and `gloss` per term; an entry may
+  set `gate: false` (only "structure" so far) when the word is ordinary
+  English, and must then carry a `gateNote`. The gate prints the
+  exemption count so it cannot hide.
+- TypeScript bridges where the reader already knows the idea: defEq is
+  structural typing with programs in the shapes (ch05), a recursor is
+  `reduce` (ch08), positivity is the rule TypeScript does not have — the
+  exercise now writes `type Bad = (x: Bad) => boolean` and the diagonal
+  beside the refusal (ch06), universes versus TypeScript's missing
+  higher-kinded types (ch03).
+- Four ASCII figures where the idea is spatial: index-counting-outward
+  and the lift picture (ch02), the constructor telescope (ch06), the
+  recursor's three parts (ch08).
+- Three real Lean kernel incidents, each verified against the issue
+  before citing: PR #14806 (is_def_eq caching made order-dependent by an
+  intransitive relation in a union-find) in ch05, PR #14807 and #14843
+  (is_prop must require a sort; the stuck-type case walked past the
+  proof-irrelevance guard on projections) in ch07, PR #14849
+  (`LEAN_NAT_MAX_SIZE`) in ch10. All post-date the pinned githash.
+- ch01 now opens on a countable fact rather than an assertion: the
+  arena's own repository ships 27 checker definitions, 26 of them
+  independent reimplementations, and nothing comparable exists for the
+  elaborator.
+- The line cap counts PROSE, not file length. Counting a `Try it` block
+  against the chapter's budget only pushes exercises smaller, and they
+  have their own gate (typecheck, run, byte-compare).
+- Gate 8 checks rule-citation links in prose only. A `[R: ID]` tag inside
+  an exercise is a source comment, the same convention `src/` uses, and
+  gate 6 still requires it to name a real rule.
+- Fresh-clone friction, which the reviewer hit: `book:gates` without
+  `vendor/` emitted 65 failures. It now prints one line naming the fetch
+  script and exits.
+- Five new tests (`tests/tc.test.ts`): projection reduction against a
+  constructor, a stuck projection typed through the telescope, structure
+  eta, `appendAfter` giving `u_1`, and annotation stripping for all four
+  wrappers. Those back the two new chapters' claims. 36 tests → 41.
+
+`bun run verify` green: tsc, eslint, 41 tests / 1267 assertions,
+type-coverage 98.81%, knip, suppressions, and the book gates at
+14 chapters / 37 rules / 39 terms / 1 gate-exempt / 1 documented
+divergence.
+
+Not done, and still open: the reader evidence. The review's own closing
+note is the same one this file has carried since the book existed — a
+book that grades its own readability has not been graded. The review
+did suggest a sharper posttest question, now written into PLAN.md: give
+a reader the `is_prop`-must-require-a-sort rule, which post-dates the
+pinned githash and appears in no chapter, and ask whether a kernel
+lacking it accepts a false proof.

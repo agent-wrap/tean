@@ -51,7 +51,17 @@ Pass bar, fixed in advance: at least two of three readers get the
 soundness direction right on all three, and name a correct forgery shape for
 B or C.
 
-## The chapters, twelve at most, one claim each, 250 lines at most
+A fourth question, added 2026-10-17, for a rule no chapter states: the
+kernel's "is this a proposition?" predicate reduces an inferred type and
+looks for `Sort 0`; suppose that on a STUCK type it answers false rather
+than refusing the term. Does that kernel accept a false proof? (Yes: it
+walks past the proof-irrelevance guard on projections, and a data field
+can be pulled out of a value treated as a proof. This was a real Lean 4
+soundness fix, PR #14807, after this book's pinned githash — so it is
+genuinely unseen, and the answer is not guessable from the shape of the
+question.)
+
+## The chapters, fourteen, one claim each, 250 lines of prose at most
 
 1. **A proof is data.** A proof checker is a pure function from data to a
    yes or a no.
@@ -64,19 +74,27 @@ B or C.
    `infer_type` and `is_def_eq`.
 6. **Data types are contracts.** The kernel must verify an inductive
    declaration, never accept it. Positivity and universe levels.
-7. **Recursion from data.** A recursor is derived, never trusted. Iota.
-8. **The real input.** A real export file finds shapes nobody writes by hand.
-9. **The failure ranking.** Rank failures by what each one blocks, and rank
-   again after every fix.
-10. **The cost.** The dead hypotheses, each with the measurement that killed
-    it.
-11. **The adversary.** A red team finds absent checks. Soundness is tested
+7. **Structures and projections.** One constructor earns field access and
+   two more equalities; each is a rule that has to be right.
+8. **Recursion from data.** A recursor is derived, never trusted. Iota.
+9. **Two more primitives.** K-like reduction and the quotient, each safe
+   only because of the check in front of it.
+10. **The real input.** A real export file finds shapes nobody writes by hand.
+11. **The conventions.** Agreeing with a kernel means agreeing with the
+    choices it made below the level of the published theory.
+12. **The cost.** Faster than the official kernel on a real library,
+    catastrophic on one adversarial case; every number measured.
+13. **The adversary.** A red team finds absent checks. Soundness is tested
     with forgeries.
-12. **The arena.** A checker is only checked when somebody who is not its
+14. **The arena.** A checker is only checked when somebody who is not its
     author checks it.
 
-Language rules: no Lean syntax before chapter 8, no pointer at our code or
-commands before chapter 8.
+Language rules: no Lean syntax before chapter 10, no pointer at our code or
+commands before chapter 10.
+
+Content rule, added 2026-10-17: the book describes the checker as it is
+and the type theory as it is. The history of how the code reached its
+current state belongs in `NOTEBOOK.md`, not in a chapter.
 
 ## The gates, in CI from week one
 
@@ -94,5 +112,5 @@ commands before chapter 8.
   The measurement for each one is listed in `docs/NOTEBOOK.md`.
 - Assumption: a TypeScript checker can pass the arena suite within its time
   budget. Settled by: a full local arena run, then a submission.
-- Assumption: the reader profile is reachable in twelve chapters. Settled by:
+- Assumption: the reader profile is reachable in fourteen chapters. Settled by:
   the think-aloud sessions and the posttest, against the bar above.

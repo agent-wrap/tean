@@ -32,6 +32,11 @@ const sample: Expr = {
   body: {
     kind: "app",
     fn: { kind: "const", name: "f" },
+    // CHEATING, and worth noticing: `x` here is a variable bound by the
+    // `fun` above, but the grammar has no node for one, so it is written
+    // as a const — which the chapter defines as a lookup in the
+    // environment. It is not. Chapter 2 is about why the right node for
+    // a variable is a number.
     arg: { kind: "const", name: "x" },
   },
 };

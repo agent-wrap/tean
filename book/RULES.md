@@ -10,7 +10,9 @@ verifies it against: Carneiro's thesis (*The Type Theory of Lean*),
 the Lean 4 kernel at githash `5045d005`, and this
 checker's source. Soundness rules also carry a forgery: an input the
 normal kernel refuses and a kernel with exactly that rule disabled
-accepts.
+accepts. A rule where this checker deliberately does not match the
+C++ kernel carries a **Divergence** line pointing at
+[docs/DIVERGENCES.md](../docs/DIVERGENCES.md).
 
 | Rule | Name | Kind |
 |---|---|---|
@@ -286,6 +288,7 @@ Literal arithmetic is a kernel extension: evaluate on big integers instead of un
 - Thesis: not modeled — Kernel extension, newer than the thesis. The size bound is LEAN_NAT_MAX_SIZE in the C++ kernel; gcd, mod, div and the bitwise operations are left unbounded because their result cannot outgrow their input. No test in the local arena suite targets the bounds: the one nat-literal forgery there attacks the arithmetic itself.
 - Lean 4 kernel: [`reduce_nat` in src/kernel/type_checker.cpp](https://github.com/leanprover/lean4/blob/5045d0056413266e57c625dcd7c365b10e377c52/src/kernel/type_checker.cpp)
 - This checker: [`reduceNat` in src/kernel/tc.ts](../src/kernel/tc.ts)
+- **Divergence**: reduceNat runs ungated inside the lazy-delta loop; the C++ kernel gates it on !has_fvar for both sides. Cost-only, completeness-increasing, sound because reduceNat fails unless both arguments evaluate to literals. See [docs/DIVERGENCES.md](../docs/DIVERGENCES.md).
 
 <a id="red-proj"></a>
 
@@ -377,11 +380,11 @@ Unit-like definitional equality: a structure with no fields has one element up t
 
 ### DEFEQ-STRING — string literal expansion
 
-A string literal equals its constructor form. The rule targets String.ofList, not String.mk: a fact read from the kernel source, not from memory.
+A string literal equals its constructor form. The rule targets String.ofList. The C++ variable holding that constant is still named g_string_mk, after the constructor an older kernel used; the value it is initialized with is String.ofList.
 
 > `strLit s == String.ofList [chars of s]`
 
-- Thesis: not modeled — Kernel extension. See docs/NOTEBOOK.md, hypothesis H7.
+- Thesis: not modeled — Kernel extension; the thesis does not model string literals.
 - Lean 4 kernel: [`try_string_lit_expansion` in src/kernel/type_checker.cpp](https://github.com/leanprover/lean4/blob/5045d0056413266e57c625dcd7c365b10e377c52/src/kernel/type_checker.cpp)
 - This checker: [`tryStringLitExpansion` in src/kernel/tc.ts](../src/kernel/tc.ts)
 

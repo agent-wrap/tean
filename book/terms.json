@@ -1,43 +1,234 @@
 {
   "comment": [
-    "The forward-reference gate: each technical term names the chapter",
-    "that defines it. scripts/book-gates.ts fails the build when a term's",
-    "first occurrence in reading order lands before its defining chapter.",
-    "Matching is case-insensitive on word boundaries, over the chapters'",
-    "full text including code fences."
+    "Two jobs, one file.",
+    "",
+    "1. The forward-reference gate: each technical term names the chapter",
+    "   that defines it. scripts/book-gates.ts fails the build when a",
+    "   term's first occurrence in reading order lands before its defining",
+    "   chapter. Matching is case-insensitive on word boundaries, over the",
+    "   chapters' full text including code fences.",
+    "",
+    "2. The reader-facing notation card, book/NOTATION.md, generated from",
+    "   this file by scripts/gen-notation-card.ts. `say` is how to read the",
+    "   term out loud; `gloss` is the one-line meaning; `symbol` is the",
+    "   notation, where the term has one. Entries with a symbol are listed",
+    "   first on the card, because a reader who stalls is usually stalling",
+    "   on a symbol.",
+    "",
+    "",
+    "An entry may set \"gate\": false to opt out of job 1 — only for",
+    "terms that are also ordinary English. It must then carry a",
+    "`gateNote` saying why, and the gate counts the exemptions out loud.",
+    "The gate checks that this file and the generated card agree, the same",
+    "way book/RULES.md is checked against book/rules.json."
   ],
   "terms": {
-    "kernel": 1,
-    "environment": 1,
-    "declaration": 1,
-    "de Bruijn": 2,
-    "bound variable": 2,
-    "free variable": 2,
-    "alpha-equivalence": 2,
-    "universe ladder": 3,
-    "impredicativ": 3,
-    "weak head normal form": 4,
-    "whnf": 4,
-    "beta": 4,
-    "delta": 4,
-    "zeta": 4,
-    "definitionally equal": 5,
-    "definitional equality": 5,
-    "proof irrelevance": 5,
-    "conversion rule": 5,
-    "eta": 5,
-    "inductive type": 6,
-    "positivity": 6,
-    "subsingleton": 6,
-    "projection": 6,
-    "recursor": 7,
-    "motive": 7,
-    "minor premise": 7,
-    "major premise": 7,
-    "iota": 7,
-    "K-like": 7,
-    "quotient": 7,
-    "NDJSON": 8,
-    "lean4export": 8
+    "kernel": {
+      "chapter": 1,
+      "say": "kernel",
+      "gloss": "The small component that checks proofs. The only part of a proof assistant that has to be correct."
+    },
+    "environment": {
+      "chapter": 1,
+      "say": "environment",
+      "gloss": "The map from names to already-checked declarations. It only ever grows, and a name may enter it once."
+    },
+    "declaration": {
+      "chapter": 1,
+      "say": "declaration",
+      "gloss": "What the kernel is handed: a name, a stated type, and — for a definition — a value."
+    },
+    "turnstile": {
+      "chapter": 1,
+      "symbol": "Γ ⊢ e : α",
+      "say": "in context gamma, e has type alpha",
+      "gloss": "The judgment the whole book computes. Γ (gamma) lists the variables in scope with their types; ⊢ is called a turnstile."
+    },
+    "de Bruijn": {
+      "chapter": 2,
+      "symbol": "#0, #1, #2",
+      "say": "bee-var zero, bee-var one",
+      "gloss": "A variable written as the number of binders between it and the binder it belongs to. #0 is the nearest."
+    },
+    "bound variable": {
+      "chapter": 2,
+      "say": "bound variable",
+      "gloss": "A variable introduced by a binder inside the term. Written as an index, never as a name."
+    },
+    "free variable": {
+      "chapter": 2,
+      "say": "free variable",
+      "gloss": "A serial-numbered stand-in used while the checker works under a binder. Its type lives in a side table."
+    },
+    "alpha-equivalence": {
+      "chapter": 2,
+      "say": "alpha-equivalence",
+      "gloss": "Sameness up to renaming bound variables. With indices instead of names it costs nothing: equal terms are equal trees."
+    },
+    "substitution": {
+      "chapter": 2,
+      "symbol": "e[a/x]",
+      "say": "e with a for x",
+      "gloss": "Replace the variable x by the term a throughout e, renumbering indices so nothing is captured."
+    },
+    "universe ladder": {
+      "chapter": 3,
+      "symbol": "Sort 0, Sort 1, …",
+      "say": "sort zero, sort one",
+      "gloss": "The tower of universes. Sort 0 is Prop (propositions); Sort 1 is Type (data types); Sort (l+1) holds Sort l."
+    },
+    "imax": {
+      "chapter": 3,
+      "symbol": "imax(l₁, l₂)",
+      "say": "eye-max of ell-one and ell-two",
+      "gloss": "The level of a function type. Collapses to 0 when the result is a proposition, however large the domain."
+    },
+    "impredicativ": {
+      "chapter": 3,
+      "say": "impredicativity",
+      "gloss": "A proposition may quantify over all propositions and stay a proposition. True of Prop only; the data rungs are predicative."
+    },
+    "reduces to": {
+      "chapter": 4,
+      "symbol": "e ⇝ e′",
+      "say": "e reduces to e-prime",
+      "gloss": "One computation step. The rules are beta, zeta, delta, iota, and the primitives of chapters 9 and 10."
+    },
+    "weak head normal form": {
+      "chapter": 4,
+      "say": "weak head normal form",
+      "gloss": "Reduce at the head until the head is a binder, a sort, or stuck — and stop. Never under a binder, never an argument."
+    },
+    "whnf": {
+      "chapter": 4,
+      "say": "double-you-h-n-f",
+      "gloss": "The usual abbreviation for weak head normal form, and the name of the function that computes it."
+    },
+    "beta": {
+      "chapter": 4,
+      "say": "beta",
+      "gloss": "Apply a function: substitute the argument into the body."
+    },
+    "delta": {
+      "chapter": 4,
+      "say": "delta",
+      "gloss": "Unfold a constant that has a definition, substituting the use site's universe levels into its value."
+    },
+    "zeta": {
+      "chapter": 4,
+      "say": "zeta",
+      "gloss": "Inline a let-bound name. A let is shared text, not an abstraction barrier."
+    },
+    "definitionally equal": {
+      "chapter": 5,
+      "symbol": "a == b",
+      "say": "a is definitionally equal to b",
+      "gloss": "Equal up to computation. This is structural typing with programs inside the shapes, so deciding it means running them."
+    },
+    "definitional equality": {
+      "chapter": 5,
+      "say": "definitional equality",
+      "gloss": "The relation above, as a noun. Sound but incomplete, and — because of proof irrelevance — not transitive."
+    },
+    "proof irrelevance": {
+      "chapter": 5,
+      "say": "proof irrelevance",
+      "gloss": "Any two proofs of one proposition are definitionally equal. The source of both warts in the line above."
+    },
+    "conversion rule": {
+      "chapter": 5,
+      "say": "the conversion rule",
+      "gloss": "The typing rule that calls definitional equality: an argument's type must match the function's domain up to computation."
+    },
+    "eta": {
+      "chapter": 5,
+      "say": "eta",
+      "gloss": "A function equals its own one-step wrapper: f == fun x => f x. Chapter 7 adds the version for records."
+    },
+    "inductive type": {
+      "chapter": 6,
+      "say": "inductive type",
+      "gloss": "A data type declared by the input file: a name, some constructors, their types. The kernel reviews it before accepting."
+    },
+    "telescope": {
+      "chapter": 6,
+      "say": "telescope",
+      "gloss": "A chain of binders where each type may mention the variables before it. A constructor's type is one."
+    },
+    "parameter": {
+      "chapter": 6,
+      "say": "parameter",
+      "gloss": "An argument of the declared type that is fixed across every constructor — a list's element type, for instance."
+    },
+    "positivity": {
+      "chapter": 6,
+      "say": "strict positivity",
+      "gloss": "The declared type may appear as the result of a constructor argument's type, never to the left of an arrow inside it."
+    },
+    "subsingleton": {
+      "chapter": 6,
+      "say": "subsingleton",
+      "gloss": "A proposition with one constructor whose every field is forced by the result type. Nothing about it can vary."
+    },
+    "projection": {
+      "chapter": 7,
+      "symbol": "s.i",
+      "say": "s dot i",
+      "gloss": "Field i of a structure value. Typed by walking the constructor's telescope; reduces only against a literal constructor application."
+    },
+    "structure": {
+      "chapter": 7,
+      "say": "structure",
+      "gloss": "A data type with exactly one constructor. Earns field access and two extra definitional equalities.",
+      "gate": false,
+      "gateNote": "An ordinary English word as well as a technical one: chapter 5 says \"union-find structure\" in the everyday sense. The forward-reference gate cannot tell word senses apart, so this entry is card-only."
+    },
+    "recursor": {
+      "chapter": 8,
+      "say": "recursor",
+      "gloss": "The constant the kernel gives back for a data type: `reduce` for that type, whose type is its induction principle."
+    },
+    "motive": {
+      "chapter": 8,
+      "symbol": "C",
+      "say": "the motive",
+      "gloss": "What the recursor is proving or building, as a family over the type and its indices."
+    },
+    "minor premise": {
+      "chapter": 8,
+      "say": "minor premise",
+      "gloss": "One per constructor: show the motive holds there, given it holds for every recursive argument."
+    },
+    "major premise": {
+      "chapter": 8,
+      "say": "major premise",
+      "gloss": "The value actually being destructed — the last argument of the recursor."
+    },
+    "iota": {
+      "chapter": 8,
+      "say": "iota",
+      "gloss": "The recursor's computation rule: applied to a constructor, select that constructor's minor premise and recurse."
+    },
+    "K-like": {
+      "chapter": 9,
+      "say": "K-like reduction",
+      "gloss": "Fire iota on a subsingleton proof without inspecting it — guarded by a definitional-equality check that is itself a soundness rule."
+    },
+    "quotient": {
+      "chapter": 9,
+      "symbol": "Quot r",
+      "say": "quote r",
+      "gloss": "The type where r-related elements are identified. Four kernel-built constants and one computation rule."
+    },
+    "NDJSON": {
+      "chapter": 10,
+      "say": "en-dee JSON",
+      "gloss": "Newline-delimited JSON: the export format, one object per line, with growing tables of names, levels and expressions."
+    },
+    "lean4export": {
+      "chapter": 10,
+      "say": "lean-four-export",
+      "gloss": "The tool that writes a checked Lean library out in that format, including the githash of the kernel that checked it."
+    }
   }
 }

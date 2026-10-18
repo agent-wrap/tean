@@ -35,6 +35,9 @@ export interface RegistryRule {
   kernel: Cite;
   src: Cite;
   forgery?: { flag: string; artifact: string; soundness: boolean };
+  /** A deliberate behavioural difference from the C++ kernel. The doc
+   *  must carry a heading naming this rule; book-gates.ts checks it. */
+  divergence?: { summary: string; doc: string };
 }
 
 const KIND_TITLES: Record<string, string> = {
@@ -76,7 +79,9 @@ export function generateRulesAppendix(rules: RegistryRule[]): string {
     "the Lean 4 kernel at githash `" + LEAN_HASH.slice(0, 8) + "`, and this",
     "checker's source. Soundness rules also carry a forgery: an input the",
     "normal kernel refuses and a kernel with exactly that rule disabled",
-    "accepts.",
+    "accepts. A rule where this checker deliberately does not match the",
+    "C++ kernel carries a **Divergence** line pointing at",
+    "[docs/DIVERGENCES.md](../docs/DIVERGENCES.md).",
     "",
     "| Rule | Name | Kind |",
     "|---|---|---|",
@@ -108,6 +113,9 @@ export function generateRulesAppendix(rules: RegistryRule[]): string {
     }
     out.push(`- Lean 4 kernel: ${kernelLink(r.kernel)}`);
     out.push(`- This checker: ${srcLink(r.src)}`);
+    if (r.divergence !== undefined) {
+      out.push(`- **Divergence**: ${r.divergence.summary} See [${r.divergence.doc}](../${r.divergence.doc}).`);
+    }
     if (r.forgery !== undefined) {
       out.push(
         `- Forgery (${r.forgery.soundness ? "soundness" : "hygiene"}): flag \`${r.forgery.flag}\`, ` +
