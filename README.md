@@ -57,13 +57,15 @@ this file was committed.
 
 ### 1. Thirty seconds, no setup
 
-Each chapter's `Try it` block is a standalone file. Chapter 1's is a
-complete type checker for the lambda calculus in about 60 lines:
+Each chapter's `Try it` block is a standalone file. Chapter 1's is the
+untyped lambda calculus — free variables, capture-avoiding substitution,
+and beta — in about 80 lines:
 
 ```sh
 bun run book/tryit/ch01.ts
-# (fun x : Nat => (f x))
-# nodes: 5
+# (fun x => (f x))   free: f
+# y
+# (fun y1 => y)
 ```
 
 It has no imports. Paste it into any TypeScript playground.

@@ -63,8 +63,14 @@ question.)
 
 ## The chapters, fourteen, one claim each, 250 lines of prose at most
 
-1. **A proof is data.** A proof checker is a pure function from data to a
-   yes or a no.
+1. **Three nodes.** The untyped lambda calculus: free and bound variables,
+   capture-avoiding substitution, beta. (Reworded 2026-10-20. It was
+   "A proof is data: a checker is a pure function from data to a yes or
+   a no"; that framing, with declarations, the environment and the
+   `check` signature, moved to chapter 3, where `Sort` exists and the
+   rule that a declaration's type must be a sort can be stated without a
+   forward reference. The book now opens on `x | fun x => e | e e` and
+   climbs, the order the Typechecker Zoo and TAPL use.)
 2. **Variables without names.** Binding is arithmetic: the de Bruijn index.
 3. **Types are terms.** One grammar holds both, and Girard's paradox forces
    the universe ladder.

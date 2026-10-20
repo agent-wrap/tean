@@ -17,9 +17,10 @@ recorded, with its command, in `../docs/NOTEBOOK.md`.
 
 ## The shape
 
-Chapters 1–9 are the theory, each one node or one rule at a time: terms,
-variables, universes, computation, the two-function core, data
-declarations, structures, recursors, and the last two primitives.
+Chapters 1–9 are the theory, each one node or one rule at a time: the
+untyped calculus, variables as indices, universes and declarations,
+computation, the two-function core, data declarations, structures,
+recursors, and the last two primitives.
 Chapters 10–14 point the finished checker at the world: the real export
 format, the kernel conventions a port must match, the measured cost, the
 forgeries, and the outside judge.

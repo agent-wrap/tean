@@ -29,20 +29,20 @@
       "gloss": "The small component that checks proofs. The only part of a proof assistant that has to be correct."
     },
     "environment": {
-      "chapter": 1,
+      "chapter": 3,
       "say": "environment",
       "gloss": "The map from names to already-checked declarations. It only ever grows, and a name may enter it once."
     },
     "declaration": {
-      "chapter": 1,
+      "chapter": 3,
       "say": "declaration",
       "gloss": "What the kernel is handed: a name, a stated type, and — for a definition — a value."
     },
     "turnstile": {
-      "chapter": 1,
+      "chapter": 3,
       "symbol": "Γ ⊢ e : α",
       "say": "in context gamma, e has type alpha",
-      "gloss": "The judgment the whole book computes. Γ (gamma) lists the variables in scope with their types; ⊢ is called a turnstile."
+      "gloss": "The judgment the whole book computes. Γ (gamma) lists the free variables in scope with their types; ⊢ is called a turnstile."
     },
     "de Bruijn": {
       "chapter": 2,
@@ -51,25 +51,30 @@
       "gloss": "A variable written as the number of binders between it and the binder it belongs to. #0 is the nearest."
     },
     "bound variable": {
-      "chapter": 2,
+      "chapter": 1,
       "say": "bound variable",
-      "gloss": "A variable introduced by a binder inside the term. Written as an index, never as a name."
+      "gloss": "A variable occurrence that belongs to an enclosing binder. From chapter 2 on, written as an index, never as a name."
     },
     "free variable": {
-      "chapter": 2,
+      "chapter": 1,
       "say": "free variable",
-      "gloss": "A serial-numbered stand-in used while the checker works under a binder. Its type lives in a side table."
+      "gloss": "A variable occurrence bound by nothing in the term. In the checker, a serial-numbered stand-in used while working under a binder; its type lives in a side table."
     },
     "alpha-equivalence": {
-      "chapter": 2,
+      "chapter": 1,
       "say": "alpha-equivalence",
       "gloss": "Sameness up to renaming bound variables. With indices instead of names it costs nothing: equal terms are equal trees."
     },
     "substitution": {
-      "chapter": 2,
+      "chapter": 1,
       "symbol": "e[a/x]",
       "say": "e with a for x",
-      "gloss": "Replace the variable x by the term a throughout e, renumbering indices so nothing is captured."
+      "gloss": "Replace every free occurrence of x in e by a, capturing nothing: by renaming binders with names, by renumbering with indices."
+    },
+    "capture": {
+      "chapter": 1,
+      "say": "capture",
+      "gloss": "A substituted term walks under a binder that uses one of its free names, and that name changes owner. The term changes meaning and nothing crashes."
     },
     "universe ladder": {
       "chapter": 3,
@@ -105,7 +110,7 @@
       "gloss": "The usual abbreviation for weak head normal form, and the name of the function that computes it."
     },
     "beta": {
-      "chapter": 4,
+      "chapter": 1,
       "say": "beta",
       "gloss": "Apply a function: substitute the argument into the body."
     },

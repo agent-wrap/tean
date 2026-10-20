@@ -714,3 +714,61 @@ did suggest a sharper posttest question, now written into PLAN.md: give
 a reader the `is_prop`-must-require-a-sort rule, which post-dates the
 pinned githash and appears in no chapter, and ask whether a kernel
 lacking it accepts a false proof.
+
+## 2026-10-20 — The book now opens on the untyped calculus
+
+Asked (by the user, pointing at Diehl's *Typechecker Zoo*): why does
+chapter 1 start without a variable node? Shouldn't the book start from
+`x | fun x => e | e e` and build up to Lean 4?
+
+Measured first, before agreeing:
+
+- `book/tryit/ch01.ts` at `802c1ae` encoded the bound `x` of
+  `fun x : Nat => f x` as a `const`, with a comment calling it cheating.
+- Chapter 1's claim test, `tests/tc.test.ts::identity function type`,
+  built the identity function with `BVar` — the node chapter 2
+  introduces. Gate 6 did not catch it: it checks words in prose, not
+  nodes in code.
+- Chapter 1 stated WF-DECL-TYPE ("its own type must be a sort") a chapter
+  before `Sort` is defined.
+
+So the complaint was right on the evidence, and the fix chosen keeps the
+chapter count (the gate hardcodes 14, and every chapter cross-references
+by number):
+
+- **ch01 rewritten as "Three nodes"**: the untyped calculus with named
+  variables — free and bound occurrences (a table), closed terms,
+  alpha-equivalence, substitution with the capture trap worked
+  (`fun y => x` with `y` for `x`), and beta. The exercise is a 3-node
+  `Expr`, `freeVars`, capture-avoiding `subst`, and `beta`; "to break
+  it" deletes the rename branch and the constant function silently
+  becomes the identity. Claim test now
+  `tests/tc.test.ts::instantiate replaces bvar 0`.
+- **ch02's exercise** dropped the type annotation on `lam` (nothing had
+  introduced types yet) and swapped `const` for an `fvar` node, which is
+  the thing the prose was already describing. Three printed lines
+  changed shape only (`(fun => …)` for `(fun : T => …)`); the prose now
+  opens on chapter 1's trap instead of re-defining it.
+- **ch03 gained "Three more nodes"**: sort, pi, const, the typed binder,
+  then declarations, the environment, WF-DECL-TYPE / WF-DEF-VAL /
+  WF-NAME-FRESH, the judgment `Γ ⊢ e : α`, and the `check` signature —
+  all of it moved from ch01, now after `Sort` exists.
+- `book/terms.json`: `bound variable`, `free variable`,
+  `alpha-equivalence`, `substitution`, `beta` now owned by ch01;
+  `declaration`, `environment`, `turnstile` by ch03; new entry
+  `capture`. NOTATION.md regenerated.
+- ch14's two "chapter 1" back-references now point at ch03; README,
+  book/README and PLAN.md item 1 updated, with the date.
+
+Numbers, after the change:
+
+- `bun run book:gates` → `all green (14 chapters, 37 rules, 40 terms,
+  1 gate-exempt, 1 documented divergence(s))`.
+- `bun check` → exit 0. `bun test` → 41 pass, 0 fail, 1267 expect() calls.
+- Prose lines (fences stripped): ch01 134, ch02 99, ch03 169; cap 250.
+- `bun book/tryit/ch01.ts` prints three lines; the capture case prints
+  `(fun y1 => y)`.
+
+Not done: the gate that would have caught the original cheat — fail a
+chapter whose `Try it` file or claim test uses an AST node introduced in
+a later chapter. Gate 6 still checks prose words only. Open row.
