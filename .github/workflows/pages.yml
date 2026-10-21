@@ -35,7 +35,11 @@ jobs:
           cargo install --locked mdbook-katex@0.10.0
           mdbook-katex --version
       - run: mdbook build
+      # Enable Pages from the workflow's own token if the repository has
+      # not been set up yet; otherwise this is a no-op.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
