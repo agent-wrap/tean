@@ -3,13 +3,16 @@
   "packages": [
     "bun@latest",
     "elan@latest",
-    "nodejs@latest"
+    "nodejs@latest",
+    "mdbook@latest",
+    "mdbook-katex@latest"
   ],
   "shell": {
     "scripts": {
       "check": ["bun check"],
       "test":  ["bun test"],
-      "arena": ["bun run arena"]
+      "arena": ["bun run arena"],
+      "site":  ["mdbook build"]
     }
   }
 }

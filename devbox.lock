@@ -81,6 +81,82 @@
       "last_modified": "2026-10-08T19:21:32Z",
       "resolved": "github:NixOS/nixpkgs/8edc0c72e3a38faf5434e40d1f19431125fe4b30?lastModified=1791487292&narHash=sha256-tqM7xDEsaeK1p6VvRygeZ9LkQRpUUkbRT02BHv6hnTM%3D"
     },
+    "mdbook-katex@latest": {
+      "last_modified": "2026-10-02T22:55:44Z",
+      "resolved": "github:NixOS/nixpkgs/55ba7f49ef2962b42cbd126522b7df5f95037679#mdbook-katex",
+      "source": "devbox-search",
+      "version": "0.10.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/n57zkv5m3clf0dfcnxqvbgxc84ifzcbr-mdbook-katex-0.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/n57zkv5m3clf0dfcnxqvbgxc84ifzcbr-mdbook-katex-0.10.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wjy08yqqjbphs5p3hkby7j4ics9pj1q8-mdbook-katex-0.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/wjy08yqqjbphs5p3hkby7j4ics9pj1q8-mdbook-katex-0.10.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/lfvnasy7xganr1gcchb841r70i62lkdn-mdbook-katex-0.10.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/lfvnasy7xganr1gcchb841r70i62lkdn-mdbook-katex-0.10.0"
+        }
+      }
+    },
+    "mdbook@latest": {
+      "last_modified": "2026-10-02T22:55:44Z",
+      "resolved": "github:NixOS/nixpkgs/55ba7f49ef2962b42cbd126522b7df5f95037679#mdbook",
+      "source": "devbox-search",
+      "version": "0.5.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/vq61xgg8inwz9xkxg5z18ql2r68d08xz-mdbook-0.5.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/vq61xgg8inwz9xkxg5z18ql2r68d08xz-mdbook-0.5.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/c9jmr5gziq5aqw6pgpr18ak9rz7p35dw-mdbook-0.5.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/c9jmr5gziq5aqw6pgpr18ak9rz7p35dw-mdbook-0.5.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9n8n27hbvaw1zfwxc6bhcgv5cf9iln18-mdbook-0.5.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/9n8n27hbvaw1zfwxc6bhcgv5cf9iln18-mdbook-0.5.4"
+        }
+      }
+    },
     "nodejs@latest": {
       "last_modified": "2026-10-08T19:21:32Z",
       "plugin_version": "0.0.4",

@@ -39,6 +39,7 @@ import { spawnSync } from "node:child_process";
 import { basename } from "node:path";
 import { generateRulesAppendix, loadRegistry } from "./gen-rules-appendix.ts";
 import { generateNotationCard, loadTerms } from "./gen-notation-card.ts";
+import { generateSummary } from "./gen-summary.ts";
 
 // A fresh clone has no vendor/. Without it every registry citation fails
 // at once, which reads like a broken project rather than a missing step.
@@ -381,6 +382,16 @@ if (!existsSync(notationPath)) {
   fail(`${notationPath} missing (run: bun run scripts/gen-notation-card.ts)`);
 } else if (read(notationPath) !== generateNotationCard(terms)) {
   fail(`${notationPath} is stale (run: bun run scripts/gen-notation-card.ts)`);
+}
+
+// Gate 11: the site's table of contents is a fresh generation from the
+// chapters' own headings. mdBook treats SUMMARY.md as the truth, so a
+// stale entry would build a stub page instead of failing.
+const summaryPath = "book/SUMMARY.md";
+if (!existsSync(summaryPath)) {
+  fail(`${summaryPath} missing (run: bun run scripts/gen-summary.ts)`);
+} else if (read(summaryPath) !== generateSummary()) {
+  fail(`${summaryPath} is stale (run: bun run scripts/gen-summary.ts)`);
 }
 
 if (failures > 0) {

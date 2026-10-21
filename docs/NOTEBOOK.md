@@ -844,3 +844,45 @@ Numbers after:
 
 Not done, carried: instances for DEFEQ-BINDING, DEFEQ-ARGS, T-LET and
 RED-IOTA, which still appear as tags only; the reader evidence.
+
+## 2026-10-21 — The book as a site: mdBook on GitHub Pages
+
+Asked: can the book render on GitHub Pages without touching the source?
+Yes. What was needed, and what was measured:
+
+- `book.toml` at the repo root, `src = "book"`, `build-dir = "site"`
+  (mdBook's default output name is `book/`, which is our source
+  directory). mdBook 0.5.4 and mdbook-katex 0.10.0 added to
+  `devbox.json`; `devbox run site` builds.
+- `$$` math: 8 display blocks and 3 inline across ch01–ch05. mdBook's
+  own MathJax wants `\\(`; mdbook-katex takes `$`/`$$` and renders at
+  build time, so one source renders on github.com and on the site.
+  Checked: `grep -c '$$' site/ch03.html` → 0 left raw, 6 KaTeX spans.
+- Links that leave `book/`: 10 in chapters, ~50 in the generated rules
+  appendix (`../src/kernel/tc.ts` etc.). Kept relative in the source;
+  `scripts/mdbook-links.ts` is a 50-line preprocessor that rewrites
+  `](../` to the repo's GitHub blob URL at build time only. Build log:
+  `55 link(s) rewritten`; `grep -c 'href="../'` on the built pages → 0.
+  Two protocol facts cost a build each: mdBook 0.5 calls the item list
+  `items` (0.4: `sections`) and sends a separator as the bare string
+  `"Separator"`, not an object.
+- `book/SUMMARY.md` generated from the chapter H1s by
+  `scripts/gen-summary.ts`; gate 11 fails when it is stale, because
+  mdBook treats SUMMARY as truth and would build stub pages from a stale
+  one (`create-missing = false` so it can never write into `book/`).
+  Appendices listed as suffix chapters so the sidebar numbers 1–15 and
+  then stops.
+- Rendered and looked at in Chrome against a static server: sidebar,
+  claim box, the three KaTeX rules side by side, the ASCII derivation
+  tree in a code block, the exercise with syntax highlighting, the
+  `#t-app` anchors resolving from chapter citations.
+- `.github/workflows/pages.yml`: mdBook from its release binary,
+  mdbook-katex via `cargo install --locked mdbook-katex@0.10.0` behind
+  `Swatinem/rust-cache` because the 0.10.0 release ships no binaries
+  (checked: only `0.10.0-alpha-binaries` and `0.9.3-binaries` have
+  assets). Deploys with `actions/deploy-pages`.
+- Not done by me: enabling Pages on the repository. `gh api -X POST
+  repos/agent-wrap/tean/pages -f build_type=workflow` → 404, which is
+  GitHub's answer for a token without admin on the repo. Until Settings →
+  Pages → Source is set to "GitHub Actions", the deploy job fails and the
+  build job still proves the site builds.

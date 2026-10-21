@@ -76,6 +76,11 @@ against the registry.
    [terms.json](terms.json) (`../scripts/gen-notation-card.ts`).
 9. No `Try it` file uses a grammar node before the chapter that
    introduces it. Gate 6 reads prose; this one reads the code.
+10. [SUMMARY.md](SUMMARY.md), the site's table of contents, equals a
+    fresh generation from the chapter headings
+    (`../scripts/gen-summary.ts`). The site is built from
+    [`../book.toml`](../book.toml) by mdBook (`devbox run site`) and
+    published by `.github/workflows/pages.yml`.
 
 ## Reading rules the book holds itself to
 

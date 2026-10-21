@@ -12,7 +12,8 @@ kernel before anything is believed.
 
 ## The book
 
-**[Start at book/ch01.md](book/ch01.md).** Fifteen chapters for a
+**Read it at [agent-wrap.github.io/tean](https://agent-wrap.github.io/tean/)**, or
+[start at book/ch01.md](book/ch01.md) in the repository. Fifteen chapters for a
 TypeScript developer who has never opened a proof assistant. Chapters 1–10
 are the theory; no Lean syntax appears before chapter 11. Each chapter
 makes one claim, names the file that backs it, and ends with a link to

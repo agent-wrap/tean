@@ -1,0 +1,37 @@
+[book]
+title = "How to build a Lean proof checker — and know that it is right"
+authors = ["tean"]
+language = "en"
+src = "book"
+
+[build]
+# The source directory is `book/`, which is also mdBook's default output
+# directory name; build somewhere else so the two never collide.
+build-dir = "site"
+create-missing = false
+
+# $…$ and $$…$$ rendered at build time with KaTeX, so the same source
+# renders on github.com and on the site. No client-side math JS.
+[preprocessor.katex]
+after = ["links"]
+
+# Links that leave book/ (../docs, ../src, ../tests) cannot be served by
+# the site. This rewrites them to the repository on GitHub at build time
+# and leaves the source relative, so a clone and a fork keep working.
+[preprocessor.repo-links]
+command = "bun run scripts/mdbook-links.ts"
+after = ["links"]
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/agent-wrap/tean"
+edit-url-template = "https://github.com/agent-wrap/tean/edit/main/book/{path}"
+site-url = "/tean/"
+mathjax-support = false
+
+[output.html.fold]
+enable = false
+
+[output.html.search]
+limit-results = 20
