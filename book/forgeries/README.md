@@ -19,7 +19,7 @@ test suite (<https://arena.lean-lang.org/>, Apache-2.0), downloaded
 
 `WF-THM-PROP` is the deliberate odd one out: a hygiene rule, not a
 soundness rule. Its weakened acceptance proves nothing false, and
-chapter 11 explains why the difference matters.
+chapter 14 explains why the difference matters.
 
 Honesty note: this checker refuses the inductive-family forgeries twice
 over — once by the named rule, once by derive-and-compare. The weakened

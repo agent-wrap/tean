@@ -60,7 +60,7 @@ C++ kernel carries a **Divergence** line pointing at
 
 ### T-SORT — the sort rule
 
-The type of a universe is the next universe. This ladder has no top; chapter 3 shows why it cannot have one.
+The type of a universe is the next universe. This ladder has no top; chapter 4 shows why it cannot have one.
 
 > `|- Sort l : Sort (l+1)`
 
@@ -406,7 +406,7 @@ Before a name enters the environment, its stated type is checked. A type whose t
 
 ### WF-DEF-VAL — the definition value check
 
-A definition's value must have the declared type, up to definitional equality. The profiles of chapter 10 land inside the equality work this check drives.
+A definition's value must have the declared type, up to definitional equality. The profiles of chapter 11 land inside the equality work this check drives.
 
 > `def c : A := e is admissible when |- e : A' and A' == A`
 
@@ -418,7 +418,7 @@ A definition's value must have the declared type, up to definitional equality. T
 
 ### WF-THM-PROP — theorems prove propositions
 
-A theorem's type must be a proposition. This is hygiene, not soundness: the value is still checked, so no forgery follows from dropping it. The forgery gate shows the weakened kernel accepting the file; chapter 11 argues why nothing false follows.
+A theorem's type must be a proposition. This is hygiene, not soundness: the value is still checked, so no forgery follows from dropping it. The forgery gate shows the weakened kernel accepting the file; chapter 12 argues why nothing false follows.
 
 > `thm c : A := e is admissible only when A : Prop`
 

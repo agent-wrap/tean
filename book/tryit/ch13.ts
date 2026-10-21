@@ -1,38 +1,56 @@
-// Chapter 13 — The adversary.
-// Run one forgery against the real checker, twice: with the rule, and
-// without it. Run from the repository root: bun book/tryit/ch13.ts
+// Chapter 13 — The cost.
+// The cache experiment: identity keys miss what reduction rebuilds.
 
-import { checkFile } from "../../src/main.ts";
-import { weaken, restoreAllRules } from "../../src/kernel/weaken.ts";
+import { Name } from "../../src/kernel/name.ts";
+import { type Expr, Const, App, exprEq } from "../../src/kernel/expr.ts";
 
-async function verdict(path: string): Promise<string> {
-  const r = await checkFile(path, false);
-  if (r.failures.length === 0) return `ACCEPTED (${r.declsChecked} declaration${r.declsChecked === 1 ? "" : "s"})`;
-  const f = r.failures[0];
-  if (f === undefined || f.failure.kind !== "refusal") return "CHECKER BUG";
-  return `refused [${f.failure.code}] at ${f.decl}`;
+// Reduction rebuilds equal terms as FRESH objects. Simulate that:
+function build(): Expr {
+  const f = new Const(Name.simple("f"), []);
+  const a = new Const(Name.simple("a"), []);
+  let e: Expr = a;
+  for (let i = 0; i < 10; i++) e = new App(f, e);
+  return e;
 }
 
-// A negative inductive type — chapter 6's forbidden shape, as real
-// export bytes from the arena's bad suite. Accepting the declaration is
-// the whole breach: Cantor's construction then derives False from it.
-const indNeg = "book/forgeries/WF-IND-POS.ndjson";
-console.log(`positivity on : ${await verdict(indNeg)}`);
-weaken("WF-IND-POS"); // the named rule...
-weaken("WF-REC-DERIVE"); // ...and trust the export, as the attack assumes
-console.log(`positivity off: ${await verdict(indNeg)}`);
-restoreAllRules();
+const first = build();
+const rebuilt = build(); // equal tree, all-new object identities
+console.log(`exprEq(first, rebuilt)    : ${exprEq(first, rebuilt)}`);
+console.log(`same object?              : ${first === rebuilt}`);
+console.log(`hashes agree?             : ${first.hash === rebuilt.hash}`);
 
-// A theorem whose type is not a proposition. Also refused — but dropping
-// THIS rule yields no proof of False, and the book must say which is which.
-const nonPropThm = "book/forgeries/WF-THM-PROP.ndjson";
-console.log(`thm-prop on   : ${await verdict(nonPropThm)}`);
-weaken("WF-THM-PROP");
-console.log(`thm-prop off  : ${await verdict(nonPropThm)}`);
-restoreAllRules();
+// Cache 1: identity-keyed, the JavaScript default.
+const identityCache = new Map<Expr, string>();
+identityCache.set(first, "cached result");
+console.log(`identity cache hit        : ${identityCache.has(rebuilt)}`);
 
-// To break it: this file IS the controlled break. The uncontrolled
-// version is a kernel that never had the rule, and no test that notices.
-// Every soundness rule in the registry carries a forgery like the first
-// one; every hygiene rule carries an explanation like the second. A rule
-// with neither is a rule nobody has defined yet.
+// Cache 2: hash buckets + structural equality, as the kernel's expr_map.
+class StructuralMap {
+  private buckets = new Map<number, { k: Expr; v: string }[]>();
+  set(k: Expr, v: string): void {
+    const b = this.buckets.get(k.hash) ?? [];
+    if (b.length === 0) this.buckets.set(k.hash, b);
+    b.push({ k, v });
+  }
+  get(k: Expr): string | undefined {
+    for (const e of this.buckets.get(k.hash) ?? []) {
+      if (e.k === k || exprEq(e.k, k)) return e.v;
+    }
+    return undefined;
+  }
+}
+const structuralCache = new StructuralMap();
+structuralCache.set(first, "cached result");
+console.log(`structural cache hit      : ${structuralCache.get(rebuilt) !== undefined}`);
+
+// The measured consequence, both numbers in docs/NOTEBOOK.md: on the
+// arena test `discarded-argument-match`, identity-keyed whnf, infer and
+// defeq caches exhaust memory; structural ones finish in 1.4 seconds.
+// Same algorithm. The only difference is the line above that can say
+// "yes" to an object it has never met.
+
+// To break it: make StructuralMap.get compare with === only, and watch
+// the hit turn false. Then consider the quieter failure: a hash that
+// includes what equality ignores (binder names, for instance) sends
+// equal terms to different buckets, and the cache silently never hits.
+// The hash must forget exactly what the equality forgets.

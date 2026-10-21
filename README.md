@@ -1,6 +1,6 @@
 # tean
 
-A Lean 4 proof checker written in TypeScript, and a fourteen-chapter book
+A Lean 4 proof checker written in TypeScript, and a fifteen-chapter book
 about building it.
 
 Lean's kernel is the part of a proof assistant that has to be right. The
@@ -12,9 +12,9 @@ kernel before anything is believed.
 
 ## The book
 
-**[Start at book/ch01.md](book/ch01.md).** Fourteen chapters for a
-TypeScript developer who has never opened a proof assistant. Chapters 1–9
-are the theory; no Lean syntax appears before chapter 10. Each chapter
+**[Start at book/ch01.md](book/ch01.md).** Fifteen chapters for a
+TypeScript developer who has never opened a proof assistant. Chapters 1–10
+are the theory; no Lean syntax appears before chapter 11. Each chapter
 makes one claim, names the file that backs it, and ends with a link to
 the next. [book/NOTATION.md](book/NOTATION.md) is the one-page card of
 every symbol and term, with the pronunciation of each.
@@ -145,7 +145,7 @@ and `std` is the counterweight. Churn profiling attributes most of the
 where tens of millions of reduction steps unfold
 `DHashMap.Internal.Raw₀.insert` over free variables while the official
 kernel does not. That gap is the top-ranked open question about this
-checker; chapter 12 states it in those terms rather than rounding it off.
+checker; chapter 13 states it in those terms rather than rounding it off.
 
 ## Layout
 
@@ -240,7 +240,7 @@ Start interactive, then go to source.
 ### Reading
 
 - **[Type Checking in Lean 4](https://ammkrn.github.io/type_checking_in_lean4/)**
-  covers the same ground as this book's chapters 1 to 9, from the other
+  covers the same ground as this book's chapters 1 to 10, from the other
   direction. Read it against ours and find where we disagree.
 - **[The Type Theory of Lean](https://github.com/digama0/lean-type-theory)**,
   Carneiro's thesis. The authority `book/rules.json` cites.

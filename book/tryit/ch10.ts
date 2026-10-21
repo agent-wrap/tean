@@ -1,58 +1,73 @@
-// Chapter 10 — The real input.
-// From here on the exercises use the real checker, not a sketch.
-// Run from the repository root: bun book/tryit/ch10.ts
+// Chapter 10 — Two more primitives.
+// K-like reduction (iota without looking at the proof) and the
+// quotient's one computation rule.
 
-import { ExportParser } from "../../src/export/parser.ts";
-import { Checker, tryStep } from "../../src/checker.ts";
+// ---------------------------------------------------------------------
+// K-like reduction
+// ---------------------------------------------------------------------
 
-// Real lines in lean4export NDJSON format (version 3.1.0). Tables of
-// names, levels, and expressions build up by index; a declaration line
-// then refers into them. Index 0 is predeclared: the anonymous name,
-// the level zero — never written on a line, and a parser that waits to
-// be told about it will index out of bounds on the first declaration.
-const file = [
-  '{"meta":{"exporter":{"name":"lean4export","version":"3.1.0"},' +
-    '"format":{"version":"3.1.0"},"lean":{"githash":"5045d005","version":"4.34.1"}}}',
-  '{"in":1,"str":{"pre":0,"str":"Nat"}}', // name 1 = "Nat"
-  '{"in":2,"str":{"pre":0,"str":"big"}}', // name 2 = "big"
-  '{"il":1,"succ":0}', // level 1 = succ 0
-  '{"ie":0,"sort":1}', // expr 0 = Sort 1, i.e. Type
-  '{"axiom":{"name":1,"levelParams":[],"type":0,"isUnsafe":false}}', // axiom Nat : Type
-  '{"ie":1,"const":{"name":1,"us":[]}}', // expr 1 = Nat
-  // natVal is a STRING in the format: 2^128 does not fit a JSON number.
-  '{"ie":2,"natVal":"340282366920938463463374607431768211456"}',
-  '{"def":{"name":2,"levelParams":[],"type":1,"value":2,' +
-    '"hints":"abbrev","safety":"safe","all":[2]}}', // def big : Nat := 2^128
-  '{"axiom":{"name":2,"levelParams":[],"type":9,"isUnsafe":false}}', // two lies at once
-];
+// A proposition as the kernel sees it: a head and its arguments.
+// `Eq x y` is the running example — one constructor, `refl x : Eq x x`.
+interface PropType {
+  head: string;
+  args: string[];
+}
+const eq = (x: string, y: string): PropType => ({ head: "Eq", args: [x, y] });
+const showT = (t: PropType): string => `${t.head} ${t.args.join(" ")}`;
 
-const parser = new ExportParser();
-const checker = new Checker();
-
-for (const [i, line] of file.entries()) {
-  const parsed = tryStep(() => parser.processLine(line));
-  if (!parsed.ok) {
-    const tag = parsed.error.kind === "refusal" ? parsed.error.code : "bug";
-    console.log(`line ${String(i + 1).padStart(2)}: refused at parse (${tag})`);
-    continue;
-  }
-  if (parsed.value === null) continue; // a table line, not a declaration
-  const decl = parsed.value;
-  const name = decl.kind === "inductive" ? "..." : decl.name.toString();
-  const checked = tryStep(() => { checker.addDecl(decl); });
-  const v = checked.ok
-    ? "accepted"
-    : `refused (${checked.error.kind === "refusal" ? checked.error.code : "bug"})`;
-  console.log(`line ${String(i + 1).padStart(2)}: ${decl.kind} ${name} — ${v}`);
+// What the SOLE constructor's type would be, at this instance. For Eq,
+// `refl x` always proves `Eq x x` — the second argument is forced.
+function soleCtorType(t: PropType): PropType | null {
+  const [x] = t.args;
+  return t.head === "Eq" && t.args.length === 2 && x !== undefined ? eq(x, x) : null;
 }
 
-console.log(`declarations checked: ${checker.declsChecked}`);
-console.log(`format version seen : ${parser.meta?.format.version ?? "none"}`);
+const defEqType = (a: PropType, b: PropType): boolean =>
+  a.head === b.head && a.args.length === b.args.length && a.args.every((x, i) => x === b.args[i]);
 
-// To break it: change natVal's value to a plain JSON number and watch
-// precision silently die before the kernel ever sees the term — then
-// put it back. The parser must read the bytes the exporter wrote, not
-// the bytes a JavaScript number can hold. The last line already breaks
-// on purpose: it reuses the name `big` AND cites expression index 9,
-// which no line declared. The parser refuses it first (parse), and had
-// it slipped through, the environment would refuse the duplicate name.
+// [R: RED-K] For a subsingleton proposition, iota may fire on a STUCK
+// proof: the type alone determines the only constructor the proof could
+// be, so the kernel substitutes that constructor without inspecting the
+// proof. Proof irrelevance fused with computation.
+//
+// The guard is the whole safety of the rule: the proof's type must be
+// definitionally the constructor's type at this instance.
+function kLike(proof: string, type: PropType, guard: boolean): string {
+  const inst = soleCtorType(type);
+  if (inst === null) return `refused: ${showT(type)} is not a subsingleton`;
+  if (guard && !defEqType(type, inst)) return `refused: ${showT(type)} is not ${showT(inst)}`;
+  return `fires: ${proof} replaced by (refl ${type.args[0] ?? "?"})`;
+}
+
+console.log(`h : Eq a a, guard on  -> ${kLike("h", eq("a", "a"), true)}`);
+console.log(`h : Eq a b, guard on  -> ${kLike("h", eq("a", "b"), true)}`);
+console.log(`h : Eq a b, guard OFF -> ${kLike("h", eq("a", "b"), false)}`);
+
+// ---------------------------------------------------------------------
+// The quotient
+// ---------------------------------------------------------------------
+
+// Quot r is the type where r-related elements are identified. The kernel
+// builds four constants for it and gives them ONE computation rule.
+type QVal =
+  | { kind: "mk"; value: string } // an element, wrapped: Quot.mk r a
+  | { kind: "opaque"; name: string }; // anything else: a variable, say
+
+// [R: RED-QUOT] Lifting a function through the quotient and applying it
+// to a WRAPPED element just applies the function. Against anything else
+// it is stuck — which is what keeps the quotient abstract.
+function quotLift(fn: string, q: QVal): string {
+  return q.kind === "mk" ? `${fn} ${q.value}` : `stuck (${q.name} is not a wrapped element)`;
+}
+
+console.log(`Quot.lift f h (Quot.mk r a) ~> ${quotLift("f", { kind: "mk", value: "a" })}`);
+console.log(`Quot.lift f h q             ~> ${quotLift("f", { kind: "opaque", name: "q" })}`);
+
+// To break it: pass `false` for the guard on the second line and the
+// refusal becomes a fire — the kernel hands back a proof of `Eq a a`
+// where a proof of `Eq a b` was asked for, and `a = b` is now provable
+// for any a and b. That one boolean is a real weakening flag in this
+// project's checker, and chapter 14 runs the forged file through it
+// both ways.
+
+export {}; // keeps this file a self-contained module

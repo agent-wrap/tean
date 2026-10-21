@@ -127,7 +127,7 @@ describe("Nat inductive", () => {
 
 // A one-constructor, non-recursive type: a structure. It earns field
 // access, a reduction rule for it, and two extra definitional
-// equalities (book chapter 7).
+// equalities (book chapter 8).
 function pairEnv(): Environment {
   const env = natEnv();
   const natC = new Const(Name.simple("Nat"), []);
@@ -188,7 +188,7 @@ describe("structures and projections", () => {
 });
 
 // Conventions the kernel fixes below the level of the published theory,
-// and that a derive-and-compare checker must reproduce (book chapter 11).
+// and that a derive-and-compare checker must reproduce (book chapter 12).
 describe("kernel naming conventions", () => {
   test("appendAfter inserts an underscore: u becomes u_1, not u1", () => {
     expect(Name.simple("u").appendAfter(1).toString()).toBe("u_1");

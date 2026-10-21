@@ -1,59 +1,91 @@
-// Chapter 3 — Types are terms.
-// The universe ladder, and the one function that holds Prop in place.
+// Chapter 3 — The arrow.
+// Three rules type three nodes, and only the rule for a call can say no.
 
-// Concrete levels are enough to see the shape (the real thing also has
-// level variables, max, and a normalizer).
-// Sort 0 is Prop. Sort 1 is Type. Sort 2 is the type of Type. And so on.
+type Type =
+  | { kind: "base"; name: string } // A, B: a type we do not look inside
+  | { kind: "arrow"; from: Type; to: Type }; // T -> U
 
-function imax(l1: number, l2: number): number {
-  // imax collapses when the right side is zero: a family of propositions
-  // is a proposition, no matter how big the domain is.
-  return l2 === 0 ? 0 : Math.max(l1, l2);
+type Expr =
+  | { kind: "bvar"; idx: number } // #0 is the nearest binder (chapter 2)
+  | { kind: "lam"; type: Type; body: Expr } // fun : T => body
+  | { kind: "app"; fn: Expr; arg: Expr };
+
+const base = (name: string): Type => ({ kind: "base", name });
+const arrow = (from: Type, to: Type): Type => ({ kind: "arrow", from, to });
+const bvar = (idx: number): Expr => ({ kind: "bvar", idx });
+const lam = (type: Type, body: Expr): Expr => ({ kind: "lam", type, body });
+const app = (fn: Expr, arg: Expr): Expr => ({ kind: "app", fn, arg });
+
+function showT(t: Type): string {
+  return t.kind === "base" ? t.name : `(${showT(t.from)} -> ${showT(t.to)})`;
+}
+function show(e: Expr): string {
+  switch (e.kind) {
+    case "bvar":
+      return `#${e.idx}`;
+    case "lam":
+      return `(fun : ${showT(e.type)} => ${show(e.body)})`;
+    case "app":
+      return `(${show(e.fn)} ${show(e.arg)})`;
+  }
 }
 
-// The typing rule for a function type (x : A) -> B:
-//   A : Sort l1    B : Sort l2 (under x)
-//   -------------------------------------
-//   ((x : A) -> B) : Sort (imax l1 l2)
-function piSort(l1: number, l2: number): number {
-  return imax(l1, l2);
+// Two types are equal when they have the same shape. Chapter 6 replaces
+// this one function with the half of the kernel that runs programs.
+function typeEq(a: Type, b: Type): boolean {
+  if (a.kind === "base" && b.kind === "base") return a.name === b.name;
+  if (a.kind === "arrow" && b.kind === "arrow") return typeEq(a.from, b.from) && typeEq(a.to, b.to);
+  return false;
 }
 
-function name(l: number): string {
-  if (l === 0) return "Prop";
-  if (l === 1) return "Type";
-  return `Sort ${l}`;
+// The context is a stack of types: ctx[0] is the type of #0.
+type Ctx = Type[];
+type Verdict = { ok: true; type: Type } | { ok: false; reason: string };
+
+function infer(ctx: Ctx, e: Expr): Verdict {
+  switch (e.kind) {
+    case "bvar": {
+      // T-VAR: look the index up.
+      const t = ctx[e.idx];
+      return t === undefined ? { ok: false, reason: `#${e.idx} is not in scope` } : { ok: true, type: t };
+    }
+    case "lam": {
+      // T-LAM: type the body with the argument pushed, then wrap.
+      const body = infer([e.type, ...ctx], e.body);
+      return body.ok ? { ok: true, type: arrow(e.type, body.type) } : body;
+    }
+    case "app": {
+      // T-APP: the function must be an arrow, and its domain must match the argument.
+      const f = infer(ctx, e.fn);
+      if (!f.ok) return f;
+      if (f.type.kind !== "arrow") return { ok: false, reason: `${showT(f.type)} is not a function type` };
+      const a = infer(ctx, e.arg);
+      if (!a.ok) return a;
+      if (!typeEq(f.type.from, a.type)) {
+        return { ok: false, reason: `argument has type ${showT(a.type)}, function wants ${showT(f.type.from)}` };
+      }
+      return { ok: true, type: f.type.to };
+    }
+  }
 }
 
-// The everyday case. `n + 0 = n` is a proposition, so l2 = 0; the domain
-// Nat is a data type, so Nat : Sort 1 and l1 = 1. A statement ABOUT
-// numbers must still be a statement.
-console.log(`(n : Nat) -> n + 0 = n : ${name(piSort(1, 0))}`);
-
-// The self-referential case: quantifying over ALL propositions...
-// domain Prop : Sort 1, so l1 = 1; body p : Prop, so l2 = 0.
-console.log(`(p : Prop) -> p        : ${name(piSort(1, 0))}`);
-
-// ...and it lands back in Prop too. That is impredicativity. Compare a
-// quantifier over Type: (A : Type) -> A has l1 = 2 and l2 = 1.
-console.log(`(A : Type) -> A        : ${name(piSort(2, 1))}`);
-
-// A chain of quantifiers only climbs as high as its tallest domain:
-console.log(`(A : Type) -> A -> A   : ${name(piSort(2, piSort(1, 1)))}`);
-
-// With max instead of imax, Prop stops absorbing:
-function piSortWrong(l1: number, l2: number): number {
-  return Math.max(l1, l2);
+function report(ctx: Ctx, e: Expr): void {
+  const v = infer(ctx, e);
+  console.log(`${show(e)}  :  ${v.ok ? showT(v.type) : `refused — ${v.reason}`}`);
 }
-console.log(`n + 0 = n, with max    : ${name(piSortWrong(1, 0))}`);
 
-// To break it: that last line IS the break. A kernel whose pi rule uses
-// max instead of imax says that `(n : Nat) -> n + 0 = n` lives in Type,
-// not Prop — every theorem that quantifies over a data type stops being
-// a proposition, and the chapter 5 rule that makes any two proofs of a
-// proposition interchangeable no longer applies to any of them.
-// The dual mistake — letting Sort l : Sort l — accepts everything,
-// including a proof of False, by Girard's paradox. The ladder is not
-// decoration; it is the wall between those two failures.
+const A = base("A");
+const B = base("B");
+
+// fun f : A -> B => fun x : A => f x — the derivation the chapter worked.
+report([], lam(arrow(A, B), lam(A, app(bvar(1), bvar(0)))));
+
+// (fun x : A => x) y, with y : B in scope as #0. Only T-APP can refuse.
+report([B], app(lam(A, bvar(0)), bvar(0)));
+
+// To break it: delete the typeEq test in the app case and rerun. The
+// refused line now prints a type for a term that hands a B to a function
+// wanting an A. The checker did not crash; it lied. Every rule the rest
+// of the book adds is one more place where exactly this can go wrong.
 
 export {}; // keeps this file a self-contained module

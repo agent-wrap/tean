@@ -1,5 +1,5 @@
 /**
- * Rule weakening for the book's forgery gate (book/ch11, tests/forgery.test.ts).
+ * Rule weakening for the book's forgery gate (book/ch14, tests/forgery.test.ts).
  *
  * Each flag disables exactly one named kernel rule, so that a test can
  * demonstrate what the rule refuses: for a soundness rule, a forgery export

@@ -1,5 +1,5 @@
 /**
- * The forgery gate (book/ch11): every weakenable rule is demonstrated by
+ * The forgery gate (book/ch14): every weakenable rule is demonstrated by
  * its negative space.
  *
  * For a soundness rule, the artifact in book/forgeries/<RULE>.ndjson is a

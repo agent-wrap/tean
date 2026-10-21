@@ -1,106 +1,59 @@
-// Chapter 4 — Computation is substitution.
-// whnf: reduce the head until it stops, and not one node more.
+// Chapter 4 — Types are terms.
+// The universe ladder, and the one function that holds Prop in place.
 
-type Expr =
-  | { kind: "bvar"; idx: number }
-  | { kind: "const"; name: string }
-  | { kind: "app"; fn: Expr; arg: Expr }
-  | { kind: "lam"; type: Expr; body: Expr };
+// Concrete levels are enough to see the shape (the real thing also has
+// level variables, max, and a normalizer).
+// Sort 0 is Prop. Sort 1 is Type. Sort 2 is the type of Type. And so on.
 
-const bvar = (idx: number): Expr => ({ kind: "bvar", idx });
-const app = (fn: Expr, arg: Expr): Expr => ({ kind: "app", fn, arg });
-const lam = (type: Expr, body: Expr): Expr => ({ kind: "lam", type, body });
-const cnst = (name: string): Expr => ({ kind: "const", name });
-
-function lift(e: Expr, start: number, amount: number): Expr {
-  switch (e.kind) {
-    case "bvar":
-      return e.idx >= start ? bvar(e.idx + amount) : e;
-    case "const":
-      return e;
-    case "app":
-      return app(lift(e.fn, start, amount), lift(e.arg, start, amount));
-    case "lam":
-      return lam(lift(e.type, start, amount), lift(e.body, start + 1, amount));
-  }
+function imax(l1: number, l2: number): number {
+  // imax collapses when the right side is zero: a family of propositions
+  // is a proposition, no matter how big the domain is.
+  return l2 === 0 ? 0 : Math.max(l1, l2);
 }
 
-function instantiate(e: Expr, a: Expr, depth = 0): Expr {
-  switch (e.kind) {
-    case "bvar":
-      if (e.idx === depth) return lift(a, 0, depth);
-      return e.idx > depth ? bvar(e.idx - 1) : e;
-    case "const":
-      return e;
-    case "app":
-      return app(instantiate(e.fn, a, depth), instantiate(e.arg, a, depth));
-    case "lam":
-      return lam(instantiate(e.type, a, depth), instantiate(e.body, a, depth + 1));
-  }
+// The typing rule for a function type (x : A) -> B:
+//   A : Sort l1    B : Sort l2 (under x)
+//   -------------------------------------
+//   ((x : A) -> B) : Sort (imax l1 l2)
+function piSort(l1: number, l2: number): number {
+  return imax(l1, l2);
 }
 
-// Definitions the head may unfold (delta).
-const env = new Map<string, Expr>();
-
-// Weak head normal form, with a step log.
-// NOTE: this sketch substitutes ONE argument per beta step, because that
-// is the short way to write it. The real checker collects the whole
-// application spine first and instantiates all of its arguments in a
-// single pass over the body — see the chapter's rule 1. One at a time
-// re-walks the body once per argument, which is quadratic in the spine.
-function whnf(e: Expr, log: string[]): Expr {
-  if (e.kind === "app" && e.fn.kind === "lam") {
-    log.push("beta");
-    return whnf(instantiate(e.fn.body, e.arg), log);
-  }
-  if (e.kind === "app" && e.fn.kind === "app") {
-    const fn = whnf(e.fn, log);
-    return fn === e.fn ? e : whnf(app(fn, e.arg), log);
-  }
-  const head = e.kind === "app" ? e.fn : e;
-  if (head.kind === "const" && env.has(head.name)) {
-    log.push(`delta: ${head.name}`);
-    const v = env.get(head.name);
-    if (v !== undefined) return whnf(e.kind === "app" ? app(v, e.arg) : v, log);
-  }
-  return e; // a lam, a bare const, or a stuck application: weak head stops.
+function name(l: number): string {
+  if (l === 0) return "Prop";
+  if (l === 1) return "Type";
+  return `Sort ${l}`;
 }
 
-function show(e: Expr): string {
-  switch (e.kind) {
-    case "bvar":
-      return `#${e.idx}`;
-    case "const":
-      return e.name;
-    case "app":
-      return `(${show(e.fn)} ${show(e.arg)})`;
-    case "lam":
-      return `(fun => ${show(e.body)})`;
-  }
+// The everyday case. `n + 0 = n` is a proposition, so l2 = 0; the domain
+// Nat is a data type, so Nat : Sort 1 and l1 = 1. A statement ABOUT
+// numbers must still be a statement.
+console.log(`(n : Nat) -> n + 0 = n : ${name(piSort(1, 0))}`);
+
+// The self-referential case: quantifying over ALL propositions...
+// domain Prop : Sort 1, so l1 = 1; body p : Prop, so l2 = 0.
+console.log(`(p : Prop) -> p        : ${name(piSort(1, 0))}`);
+
+// ...and it lands back in Prop too. That is impredicativity. Compare a
+// quantifier over Type: (A : Type) -> A has l1 = 2 and l2 = 1.
+console.log(`(A : Type) -> A        : ${name(piSort(2, 1))}`);
+
+// A chain of quantifiers only climbs as high as its tallest domain:
+console.log(`(A : Type) -> A -> A   : ${name(piSort(2, piSort(1, 1)))}`);
+
+// With max instead of imax, Prop stops absorbing:
+function piSortWrong(l1: number, l2: number): number {
+  return Math.max(l1, l2);
 }
+console.log(`n + 0 = n, with max    : ${name(piSortWrong(1, 0))}`);
 
-function run(label: string, e: Expr): void {
-  const log: string[] = [];
-  const r = whnf(e, log);
-  console.log(`${label}  ~>  ${show(r)}   [${log.join(", ")}]`);
-}
-
-const T = cnst("T");
-// two = fun f => fun x => f (f x)
-const two = lam(T, lam(T, app(bvar(1), app(bvar(1), bvar(0)))));
-env.set("two", two);
-
-run("two g", app(cnst("two"), cnst("g")));
-// The body of a lambda is NOT reduced: weak head normal form stops at
-// the first binder. The redex (two g) inside survives untouched.
-run("fun => (two g)", lam(T, app(cnst("two"), cnst("g"))));
-// Head redexes chain: ((fun => #0) two) g needs beta, delta, beta.
-run("((fun => #0) two) g", app(app(lam(T, bvar(0)), cnst("two")), cnst("g")));
-
-// To break it: make whnf reduce inside lam bodies too (full
-// normalization). Every answer stays "the same" up to computation — and
-// chapter 12 measures the price: real proofs reach reduction depths in
-// the tens of thousands, and eager reduction does all of that work even
-// when the first head symbol already decides the comparison.
+// To break it: that last line IS the break. A kernel whose pi rule uses
+// max instead of imax says that `(n : Nat) -> n + 0 = n` lives in Type,
+// not Prop — every theorem that quantifies over a data type stops being
+// a proposition, and the chapter 6 rule that makes any two proofs of a
+// proposition interchangeable no longer applies to any of them.
+// The dual mistake — letting Sort l : Sort l — accepts everything,
+// including a proof of False, by Girard's paradox. The ladder is not
+// decoration; it is the wall between those two failures.
 
 export {}; // keeps this file a self-contained module

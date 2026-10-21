@@ -772,3 +772,75 @@ Numbers, after the change:
 Not done: the gate that would have caught the original cheat — fail a
 chapter whose `Try it` file or claim test uses an AST node introduced in
 a later chapter. Gate 6 still checks prose words only. Open row.
+
+## 2026-10-20 — The missing rung: a simply typed chapter, and a gate that reads code
+
+Asked: reviewed against Diehl's *Typechecker Zoo*, what does the book
+lack for a TypeScript reader who has never seen lambda calculus? Method:
+not the Zoo's prose but its source (`coc/src/ast.rs`: named variables;
+`alpha.rs`: 419 lines of alpha-equivalence, the cost of names in code;
+`type-rules` page: 23 rules, no worked example), plus a prerequisite and
+worked-example audit of ch01–ch09 by a fresh agent, plus counts over our
+own chapters.
+
+Measured, before changing anything:
+
+- `grep -cF '\frac' book/ch*.md` → one inference rule displayed in the
+  whole book (T-PI, then ch03.md:124). T-VAR, T-LAM, T-APP existed only
+  as six tags in a list (then ch05.md:13–15), never stated.
+- No typing derivation worked on a concrete term anywhere before the
+  two-function core. "Simply typed" appeared in no chapter.
+- First runnable type checker: chapter 5.
+- Audit's "assumed, never introduced" column, worst items: "a proof of
+  `p` is a term of type `p`" stated nowhere (my own b7fdc2a cut the
+  sentence that carried it); `A -> B` used in six chapters, never
+  defined; `Vector T (2+3)`, `n + 0 = n`, `Eq a a`/`refl` used before any
+  of Nat, `=`, Eq exist; "constructor" changes sense silently at the
+  data-types chapter.
+
+Done:
+
+- **New chapter 3, "The arrow."** Simply typed calculus on chapter 2's
+  indices: base and arrow types, the judgment and the context as a
+  stack, VAR/LAM/APP with the inference bar explained, one derivation
+  worked leaf-to-root on `fun f : A -> B => fun x : A => f x`, one
+  refusal worked, and a 90-line `infer` the reader runs. Its `typeEq` is
+  flagged as the line that becomes half the kernel. Claim test:
+  `tests/tc.test.ts::identity function type`.
+- Chapters 3–14 renumbered 4–15 by script (file moves; same-line
+  `chapter N` and `chNN` references; then a second pass for references
+  that wrap across a line, which the first pass could not see — one in
+  ch01). Three plural references ("chapters 10 through 12", "chapters
+  3, 6", "chapters 5 to 9") were half-shifted by the regex and fixed by
+  hand. Lines with URLs were excluded so Pierce's and Peyton Jones's
+  chapter numbers stayed theirs. Four pointers were already stale from
+  the previous renumber (`book/ch11` for the forgery gate in
+  `rules.json`, `forgery.test.ts`, `weaken.ts`, `forgeries/README.md`)
+  and now say ch14, the adversary.
+- Chapter 4: the judgment paragraph moved to ch03 and replaced by a
+  back-reference; the arrow defined as the pi whose body ignores `x`;
+  a Curry–Howard paragraph where `Prop` arrives; Nat and `=` marked as
+  taken on credit until chapter 7. Chapter 5: `Vector` likewise.
+  Chapter 7: `Eq` and `refl` declared in prose at first use; the
+  constructor sense-switch named at the switch.
+- Registry: `turnstile` to ch03; new `arrow`, `derivation`,
+  `Curry–Howard`. 43 terms.
+- **Gate 9 added**, `scripts/book-gates.ts`: a `Try it` file may not use
+  a grammar node kind before the chapter that introduces it
+  (`var/lam/app`:1, `bvar/fvar`:2, `base/arrow`:3, `sort/const/pi`:4,
+  `let`:5, `proj`:8, `lit`:11). Checked that it bites: with the
+  `802c1ae` version of `book/tryit/ch01.ts` swapped in, the gate fails
+  six times (`sort`, `pi`, `const`×4 in chapter 1); with the current
+  file it is green.
+
+Numbers after:
+
+- `bun run book:gates` → `all green (15 chapters, 37 rules, 43 terms,
+  1 gate-exempt, 1 documented divergence(s))`. `bun check` → 0.
+  `bun test` → 41 pass. `bun run lint` → clean.
+- Prose lines: ch03 115, ch04 173, ch05 87, ch07 120; cap 250.
+- First runnable type checker: chapter 3 (was 5). Inference rules
+  displayed: 4 (was 1).
+
+Not done, carried: instances for DEFEQ-BINDING, DEFEQ-ARGS, T-LET and
+RED-IOTA, which still appear as tags only; the reader evidence.

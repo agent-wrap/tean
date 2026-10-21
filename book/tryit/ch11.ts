@@ -1,58 +1,58 @@
-// Chapter 11 — The conventions.
-// Two pieces of kernel behaviour that no published rule mentions, and
-// that a derive-and-compare checker must reproduce exactly.
+// Chapter 11 — The real input.
+// From here on the exercises use the real checker, not a sketch.
 // Run from the repository root: bun book/tryit/ch11.ts
 
-import { Name } from "../../src/kernel/name.ts";
-import { Const, App, ExprKind, consumeTypeAnnotations, type Expr } from "../../src/kernel/expr.ts";
+import { ExportParser } from "../../src/export/parser.ts";
+import { Checker, tryStep } from "../../src/checker.ts";
 
-// ---------------------------------------------------------------------
-// 1. Freshening a universe-level name
-// ---------------------------------------------------------------------
+// Real lines in lean4export NDJSON format (version 3.1.0). Tables of
+// names, levels, and expressions build up by index; a declaration line
+// then refers into them. Index 0 is predeclared: the anonymous name,
+// the level zero — never written on a line, and a parser that waits to
+// be told about it will index out of bounds on the first declaration.
+const file = [
+  '{"meta":{"exporter":{"name":"lean4export","version":"3.1.0"},' +
+    '"format":{"version":"3.1.0"},"lean":{"githash":"5045d005","version":"4.34.1"}}}',
+  '{"in":1,"str":{"pre":0,"str":"Nat"}}', // name 1 = "Nat"
+  '{"in":2,"str":{"pre":0,"str":"big"}}', // name 2 = "big"
+  '{"il":1,"succ":0}', // level 1 = succ 0
+  '{"ie":0,"sort":1}', // expr 0 = Sort 1, i.e. Type
+  '{"axiom":{"name":1,"levelParams":[],"type":0,"isUnsafe":false}}', // axiom Nat : Type
+  '{"ie":1,"const":{"name":1,"us":[]}}', // expr 1 = Nat
+  // natVal is a STRING in the format: 2^128 does not fit a JSON number.
+  '{"ie":2,"natVal":"340282366920938463463374607431768211456"}',
+  '{"def":{"name":2,"levelParams":[],"type":1,"value":2,' +
+    '"hints":"abbrev","safety":"safe","all":[2]}}', // def big : Nat := 2^128
+  '{"axiom":{"name":2,"levelParams":[],"type":9,"isUnsafe":false}}', // two lies at once
+];
 
-// A universe-polymorphic recursor needs a FRESH level variable for its
-// motive. "Fresh" means `u`, unless the declaration already binds `u`,
-// in which case a counter is appended. The question a port must answer
-// exactly: what string does appending produce?
+const parser = new ExportParser();
+const checker = new Checker();
 
-const plausible = (base: string, i: number): string => `${base}${i}`;
-const actual = Name.simple("u").appendAfter(1).toString();
+for (const [i, line] of file.entries()) {
+  const parsed = tryStep(() => parser.processLine(line));
+  if (!parsed.ok) {
+    const tag = parsed.error.kind === "refusal" ? parsed.error.code : "bug";
+    console.log(`line ${String(i + 1).padStart(2)}: refused at parse (${tag})`);
+    continue;
+  }
+  if (parsed.value === null) continue; // a table line, not a declaration
+  const decl = parsed.value;
+  const name = decl.kind === "inductive" ? "..." : decl.name.toString();
+  const checked = tryStep(() => { checker.addDecl(decl); });
+  const v = checked.ok
+    ? "accepted"
+    : `refused (${checked.error.kind === "refusal" ? checked.error.code : "bug"})`;
+  console.log(`line ${String(i + 1).padStart(2)}: ${decl.kind} ${name} — ${v}`);
+}
 
-console.log(`string concatenation : ${plausible("u", 1)}`);
-console.log(`Name.appendAfter     : ${actual}`);
-console.log(`the export says      : u_1  (PUnit.rec levelParams, in the bytes)`);
+console.log(`declarations checked: ${checker.declsChecked}`);
+console.log(`format version seen : ${parser.meta?.format.version ?? "none"}`);
 
-// The underscore is not cosmetic. The recursor is derived and compared
-// against the exported one (chapter 8), and the motive's level variable
-// appears in every level annotation of that type. One wrong character
-// and every universe-polymorphic inductive type in the library is
-// refused — a type error reported against the *library*, for a
-// disagreement about a name.
-console.log(`derived type matches : ${actual === "u_1"}`);
-
-// ---------------------------------------------------------------------
-// 2. Annotations on binder types
-// ---------------------------------------------------------------------
-
-// Elaboration-time markers (outParam, optParam, autoParam,
-// semiOutParam) survive into the export, wrapped around binder types.
-// They carry no meaning for the kernel, and recursor derivation must
-// strip them before making locals — otherwise the derived recursor's
-// binders differ from the exported one's, again by nothing that matters.
-const nat: Expr = new Const(Name.simple("Nat"), []);
-const wrapped: Expr = new App(new Const(Name.simple("outParam"), []), nat);
-
-const show = (e: Expr): string =>
-  e.kind === ExprKind.App ? `(${show(e.fn)} ${show(e.arg)})` : (e as Const).name.toString();
-
-console.log(`\nbinder type as exported : ${show(wrapped)}`);
-console.log(`after consumeTypeAnnotations : ${show(consumeTypeAnnotations(wrapped))}`);
-console.log(`a bare type is unchanged     : ${show(consumeTypeAnnotations(nat))}`);
-
-// To break it: neither of these is reachable from the published type
-// theory, which specifies a recursor's type only up to the naming of
-// its bound variables. Once an export writes those names down, the
-// naming is part of the interface — and the only normative statement of
-// it is the kernel's source. That is why this book's registry cites a
-// symbol in the C++ for every rule, and why chapter 14 insists on an
-// oracle the author did not write.
+// To break it: change natVal's value to a plain JSON number and watch
+// precision silently die before the kernel ever sees the term — then
+// put it back. The parser must read the bytes the exporter wrote, not
+// the bytes a JavaScript number can hold. The last line already breaks
+// on purpose: it reuses the name `big` AND cites expression index 9,
+// which no line declared. The parser refuses it first (parse), and had
+// it slipped through, the environment would refuse the duplicate name.

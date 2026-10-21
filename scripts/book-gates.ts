@@ -3,7 +3,7 @@
  * every failure names its file. Run: bun run scripts/book-gates.ts
  *
  * Gates:
- *  1. Fourteen chapters exist, each at most 250 lines.
+ *  1. Fifteen chapters exist, each at most 250 lines.
  *  2. Exactly one Claim per chapter, each chapter ends with a link to the
  *     next by its real title and filename, and every "Chapter N" mention
  *     points at a chapter that exists.
@@ -59,7 +59,7 @@ function read(path: string): string {
   return readFileSync(path, "utf8");
 }
 
-const CHAPTER_COUNT = 14;
+const CHAPTER_COUNT = 15;
 const chapterPaths = Array.from({ length: CHAPTER_COUNT }, (_, i) => `book/ch${String(i + 1).padStart(2, "0")}.md`);
 
 interface Chapter {
@@ -296,7 +296,7 @@ for (const id of ruleIds) {
 
 // Gate 7: no forward references.
 // Chapter titles are exempt: a title names its own subject, so the
-// heading "Chapter 7 — Structures and projections" must not count as a
+// heading "Chapter 8 — Structures and projections" must not count as a
 // use of "structure".
 const titles = chapters.map((c) => `Chapter ${c.num} — ${c.title}`);
 const withoutTitles = (s: string): string => titles.reduce((acc, t) => acc.split(t).join(" "), s);
@@ -348,7 +348,34 @@ for (const ch of chapters) {
   }
 }
 
-// Gate 9: the notation card is a fresh generation from the term table.
+// Gate 9: a Try-it file uses no grammar node before the chapter that
+// introduces it. Gate 6 catches words in prose; this catches the code —
+// chapter 1 once encoded a bound variable as a const and no gate noticed.
+// Only kinds that name a node of the kernel grammar are listed; an
+// exercise may invent kinds of its own for its own data.
+const NODE_CHAPTER: Record<string, number> = {
+  var: 1, lam: 1, app: 1,
+  bvar: 2, fvar: 2,
+  base: 3, arrow: 3,
+  sort: 4, const: 4, pi: 4,
+  let: 5,
+  proj: 8,
+  lit: 11,
+};
+for (const ch of chapters) {
+  const m = /<!-- gate:tryit ([^ ]+) -->/.exec(ch.text);
+  const tryitPath = m?.[1] ?? "";
+  if (!existsSync(tryitPath)) continue;
+  for (const k of read(tryitPath).matchAll(/kind: "([a-z]+)"/g)) {
+    const kind = k[1] ?? "";
+    const owner = NODE_CHAPTER[kind];
+    if (owner !== undefined && owner > ch.num) {
+      fail(`${tryitPath} uses node kind "${kind}", which chapter ${owner} introduces`);
+    }
+  }
+}
+
+// Gate 10: the notation card is a fresh generation from the term table.
 const notationPath = "book/NOTATION.md";
 if (!existsSync(notationPath)) {
   fail(`${notationPath} missing (run: bun run scripts/gen-notation-card.ts)`);

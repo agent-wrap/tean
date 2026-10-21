@@ -11,7 +11,7 @@
     "way. `thesis: null` means the rule is a kernel extension that the",
     "thesis does not model; `note` says what it is instead.",
     "`forgery` names the weakening flag and artifact of the negative-space",
-    "demonstration in tests/forgery.test.ts (book chapter 11).",
+    "demonstration in tests/forgery.test.ts (book chapter 14).",
     "`divergence` marks a deliberate behavioural difference from the",
     "C++ kernel; the named doc must carry a heading for the rule."
   ],
@@ -21,7 +21,7 @@
       "name": "the sort rule",
       "kind": "typing",
       "statement": "|- Sort l : Sort (l+1)",
-      "meaning": "The type of a universe is the next universe. This ladder has no top; chapter 3 shows why it cannot have one.",
+      "meaning": "The type of a universe is the next universe. This ladder has no top; chapter 4 shows why it cannot have one.",
       "thesis": {
         "file": "vendor/lean-type-theory/axioms.tex",
         "anchor": "subsection{Typing}"
@@ -548,7 +548,7 @@
       "name": "the definition value check",
       "kind": "wellformedness",
       "statement": "def c : A := e is admissible when |- e : A' and A' == A",
-      "meaning": "A definition's value must have the declared type, up to definitional equality. The profiles of chapter 10 land inside the equality work this check drives.",
+      "meaning": "A definition's value must have the declared type, up to definitional equality. The profiles of chapter 11 land inside the equality work this check drives.",
       "thesis": {
         "file": "vendor/lean-type-theory/axioms.tex",
         "anchor": "Definitions ($\\delta$ reduction)"
@@ -567,7 +567,7 @@
       "name": "theorems prove propositions",
       "kind": "wellformedness",
       "statement": "thm c : A := e is admissible only when A : Prop",
-      "meaning": "A theorem's type must be a proposition. This is hygiene, not soundness: the value is still checked, so no forgery follows from dropping it. The forgery gate shows the weakened kernel accepting the file; chapter 11 argues why nothing false follows.",
+      "meaning": "A theorem's type must be a proposition. This is hygiene, not soundness: the value is still checked, so no forgery follows from dropping it. The forgery gate shows the weakened kernel accepting the file; chapter 12 argues why nothing false follows.",
       "thesis": null,
       "note": "Not in the thesis, which has only definitions and primitive constants. It is a Lean convention: a theorem's value is a proof, so the elaborator may check it asynchronously and the compiler erases it. The kernel itself still stores and unfolds that value.",
       "kernel": {

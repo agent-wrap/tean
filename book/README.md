@@ -1,6 +1,6 @@
 # How to build a Lean proof checker — and know that it is right
 
-Fourteen chapters for a TypeScript developer who has never met a proof
+Fifteen chapters for a TypeScript developer who has never met a proof
 assistant. Start at [ch01.md](ch01.md); every chapter ends with a link to
 the next.
 Keep [the notation card](NOTATION.md) open beside them — one page with
@@ -17,11 +17,11 @@ recorded, with its command, in `../docs/NOTEBOOK.md`.
 
 ## The shape
 
-Chapters 1–9 are the theory, each one node or one rule at a time: the
-untyped calculus, variables as indices, universes and declarations,
-computation, the two-function core, data declarations, structures,
-recursors, and the last two primitives.
-Chapters 10–14 point the finished checker at the world: the real export
+Chapters 1–10 are the theory, each one node or one rule at a time: the
+untyped calculus, variables as indices, the arrow and the first type
+checker, universes and declarations, computation, the two-function core,
+data declarations, structures, recursors, and the last two primitives.
+Chapters 11–15 point the finished checker at the world: the real export
 format, the kernel conventions a port must match, the measured cost, the
 forgeries, and the outside judge.
 
@@ -52,7 +52,7 @@ against the registry.
 
 ## The gates (`../scripts/book-gates.ts`, run in CI)
 
-1. Fourteen chapters, 250 lines of prose each at most (exercises are
+1. Fifteen chapters, 250 lines of prose each at most (exercises are
    held to their own standard, below), one claim per chapter.
 2. Reading order: each chapter ends with a link to the next by its real
    title and filename, and every chapter cross-reference resolves.
@@ -74,10 +74,12 @@ against the registry.
    prose links to its own anchor there.
 8. [NOTATION.md](NOTATION.md) equals a fresh generation from
    [terms.json](terms.json) (`../scripts/gen-notation-card.ts`).
+9. No `Try it` file uses a grammar node before the chapter that
+   introduces it. Gate 6 reads prose; this one reads the code.
 
 ## Reading rules the book holds itself to
 
-- Chapters 1–9 contain no Lean syntax, no repository paths, no commands,
+- Chapters 1–10 contain no Lean syntax, no repository paths, no commands,
   and no test names in their prose. The sanctioned exceptions are the
   machine apparatus (gate comments in HTML, the `Try it` footer), link
   targets, and the titles cited under References.
