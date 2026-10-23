@@ -916,3 +916,48 @@ Yes. What was needed, and what was measured:
 - `redex` and `normal form` registered in `book/terms.json` at chapter
   1; the card regenerated. Gates: 15 chapters, 37 rules, 45 terms, all
   green. Chapter 1 prose: 176 of 250 lines. tsc, lint, 41 tests green.
+
+## 2026-10-22 — The climb runs end to end: chapters 2 and 4 made runnable, three programs threaded 1 to 6
+
+Asked: at each rung of the lambda cube the book climbs (chapters 1–6),
+can the reader feed the exercise a program and watch it answer? Survey
+of what each exercise ran before this entry:
+
+| ch | exercise ran | end to end |
+|---|---|---|
+| 1 | normalize, since this morning | yes |
+| 2 | instantiate on three terms, no loop | no |
+| 3 | infer, three rules | yes |
+| 4 | imax on hard-coded levels; no term typed | no |
+| 5 | whnf with a log | yes, for its half |
+| 6 | infer + defEq + whnf | yes |
+
+- Chapter 2: `step` and `normalize` ported to indices (beta is
+  `instantiate`), no `freeVars`, no `freshName`. Same three programs as
+  chapter 1 print the same answers. New section "Running it, without
+  the rename". Prose 95 → 110.
+- Chapter 4: the exercise is now chapter 3's `infer` over the one
+  grammar (bvar, sort, const, pi, lam, app) with T-SORT, T-CONST, T-PI
+  with `imax`, LAM returning a pi, APP instantiating the pi body, VAR
+  lifting; `typeEq` structural, one case per node. Environment: Nat,
+  zero, succ, and `Eq : (A : Type) -> A -> A -> Prop` as
+  `pi(Type, pi(#0, pi(#1, Prop)))`, which is the first dependent type
+  the reader sees as data. Nine output lines, the old five level
+  demonstrations reproduced through the checker (`(n : Nat) -> Eq Nat
+  n n : Prop`, with max: `Type`). 59 → 171 lines of exercise. New
+  section "The checker, one grammar". Prose 170 → 195.
+- The thread: identity, constant function on two arguments, and the
+  self-applying term, run in every exercise from chapter 1 to 6.
+  Chapters 1 and 2 loop on the third (cap at 1000). Chapter 3 refuses
+  it ("A is not a function type"), chapter 4 the same with Nat, chapter
+  6 the same ("function expected"). Chapter 5 and chapter 6 both
+  compute `K a b` to `a`: chapter 5 by whnf with log `[beta, beta]`,
+  chapter 6 as `defEq(K c1 c2, c1) = true` with whnf inside the
+  comparison. One sentence in each chapter says what happened to the
+  three this time.
+- Gate 9 needed no change: every node each exercise uses was already
+  permitted at its chapter. Gates all green (15 chapters, 37 rules, 45
+  terms), tsc, lint, 41 tests. Prose after: 176, 110, 119, 195, 88, 105.
+- A scratch script splices each exercise file and its real output into
+  the chapter's two fences; the try-it gate then has nothing to object
+  to. Not committed: it is three lines of regex and belongs nowhere.

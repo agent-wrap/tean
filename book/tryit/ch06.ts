@@ -197,6 +197,19 @@ console.log(`h1 == h2 (proofs of P)        : ${defEq(cnst("h1"), cnst("h2"), [])
 // ...but two different pieces of data of type T are not.
 console.log(`c1 == c2 (data in T)          : ${defEq(cnst("c1"), cnst("c2"), [])}`);
 
+// The three programs, at the top of the climb. Chapter 4 typed the
+// constant function; the judge also runs it: K c1 c2 is c1, by whnf
+// inside defEq. The self-applying term stays refused.
+const T = cnst("T");
+const k = lam(T, lam(T, bvar(1)));
+console.log(`infer(fun : T => #0)          = ${show(infer(lam(T, bvar(0)), []))}`);
+console.log(`K c1 c2 == c1                 : ${defEq(app(app(k, cnst("c1")), cnst("c2")), cnst("c1"), [])}`);
+try {
+  infer(lam(T, app(bvar(0), bvar(0))), []);
+} catch (err) {
+  console.log(`infer(fun : T => #0 #0)       : refused — ${(err as Error).message}`);
+}
+
 // To break it: remove step 3 from defEq. h1 == h2 turns false — no false
 // proof is accepted, but real libraries stop checking, because dependent
 // types compare proofs inside types all the time. The rule is

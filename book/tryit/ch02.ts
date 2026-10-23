@@ -56,6 +56,36 @@ function show(e: Expr): string {
   }
 }
 
+// Chapter 1's interpreter, ported. Beta is now instantiate, and there is
+// no freshName, no freeVars, no rename: nothing here can capture.
+function step(e: Expr): Expr | null {
+  switch (e.kind) {
+    case "bvar":
+    case "fvar":
+      return null;
+    case "lam": {
+      const body = step(e.body);
+      return body === null ? null : lam(body);
+    }
+    case "app": {
+      if (e.fn.kind === "lam") return instantiate(e.fn.body, e.arg); // the redex
+      const fn = step(e.fn);
+      if (fn !== null) return app(fn, e.arg);
+      const arg = step(e.arg);
+      return arg === null ? null : app(e.fn, arg);
+    }
+  }
+}
+
+function normalize(e: Expr, cap = 1000): string {
+  for (let i = 0; i < cap; i++) {
+    const next = step(e);
+    if (next === null) return show(e);
+    e = next;
+  }
+  return `(still stepping after ${cap} steps)`;
+}
+
 // fun x => fun y => x y   is   fun => fun => #1 #0
 const inner = lam(app(bvar(1), bvar(0)));
 const twoBinders = lam(inner);
@@ -71,8 +101,16 @@ console.log(show(instantiate(inner, fvar("c"))));
 const needsLift = lam(app(bvar(0), bvar(1)));
 console.log(show(instantiate(inner, needsLift)));
 
+// Chapter 1's three programs, without names. Same answers, no rename.
+const id = lam(bvar(0)); //                      fun x => x
+const k = lam(lam(bvar(1))); //                  fun x => fun y => x
+const omega = lam(app(bvar(0), bvar(0))); //     fun x => x x
+console.log(normalize(app(id, fvar("a"))));
+console.log(normalize(app(app(k, fvar("a")), fvar("b"))));
+console.log(normalize(app(omega, omega)));
+
 // To break it: delete the call to lift inside instantiate and rerun.
-// The last line changes: the moved #1 now points at the wrong binder.
+// The third line changes: the moved #1 now points at the wrong binder.
 // That silent wrong answer, not a crash, is why capture is feared.
 
 export {}; // keeps this file a self-contained module

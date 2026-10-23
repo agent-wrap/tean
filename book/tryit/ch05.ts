@@ -96,6 +96,10 @@ run("two g", app(cnst("two"), cnst("g")));
 run("fun => (two g)", lam(T, app(cnst("two"), cnst("g"))));
 // Head redexes chain: ((fun => #0) two) g needs beta, delta, beta.
 run("((fun => #0) two) g", app(app(lam(T, bvar(0)), cnst("two")), cnst("g")));
+// Chapter 2's constant function on two arguments: the same answer
+// chapter 1 reached by walking the whole tree, here from the head alone.
+const k = lam(T, lam(T, bvar(1)));
+run("K a b", app(app(k, cnst("a")), cnst("b")));
 
 // To break it: make whnf reduce inside lam bodies too (full
 // normalization). Every answer stays "the same" up to computation — and

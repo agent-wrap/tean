@@ -83,6 +83,14 @@ report([], lam(arrow(A, B), lam(A, app(bvar(1), bvar(0)))));
 // (fun x : A => x) y, with y : B in scope as #0. Only T-APP can refuse.
 report([B], app(lam(A, bvar(0)), bvar(0)));
 
+// Chapter 2's three programs, with a type on each binder. The first two
+// are accepted. The third is the term that never stopped: for `x x` to
+// type, x would need to be an arrow and its own domain at once, and no
+// type is. The first program a type takes away is the one that loops.
+report([], lam(A, bvar(0)));
+report([], lam(A, lam(B, bvar(1))));
+report([], lam(A, app(bvar(0), bvar(0))));
+
 // To break it: delete the typeEq test in the app case and rerun. The
 // refused line now prints a type for a term that hands a B to a function
 // wanting an A. The checker did not crash; it lied. Every rule the rest
