@@ -92,6 +92,16 @@
       "say": "capture",
       "gloss": "A substituted term walks under a binder that uses one of its free names, and that name changes owner. The term changes meaning and nothing crashes."
     },
+    "redex": {
+      "chapter": 1,
+      "say": "redex",
+      "gloss": "A reducible expression: a call whose function is a lambda, the one place beta can fire."
+    },
+    "normal form": {
+      "chapter": 1,
+      "say": "normal form",
+      "gloss": "A term with no redex anywhere in it. Running a program means stepping until it reaches one; some never do."
+    },
     "universe ladder": {
       "chapter": 4,
       "symbol": "Sort 0, Sort 1, …",

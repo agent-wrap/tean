@@ -886,3 +886,33 @@ Yes. What was needed, and what was measured:
   GitHub's answer for a token without admin on the repo. Until Settings →
   Pages → Source is set to "GitHub Actions", the deploy job fails and the
   build job still proves the site builds.
+
+## 2026-10-22 — Pages is live, and chapter 1 runs a whole program
+
+- The second `pages` run with `enablement: true` on `configure-pages`
+  also failed: "Create Pages site failed. Error: Resource not accessible
+  by integration". The workflow token cannot create the site either.
+  After the source was set to "GitHub Actions" in the repo settings, run
+  39547181814 succeeded; `curl -o /dev/null -w '%{http_code}'
+  https://agent-wrap.github.io/tean/` → 200.
+- Read chapter 1 as a reader. Two counting slips: "nine nodes is the
+  whole grammar" while chapter 2's exercise adds `fvar` as a union
+  member (the kernel's `Expr` has ten members, `src/kernel/expr.ts`);
+  and "types arrive in chapter 3" inside a list introduced as nodes
+  added to the grammar, when chapter 3's arrow is absorbed by chapter 4's
+  pi. Both reworded in the arrival paragraph: the free variable is "one
+  bookkeeping node the checker needs and the language does not"; the
+  arrow is "a first, temporary type".
+- Asked by the reader: what else is needed to run such programs? Answer
+  added as a section "Running it": redex, normal form, `step`
+  (leftmost-outermost) and a `normalize` loop capped at 1000 steps, run
+  on `K a b` → `a` and on `(fun x => x x) (fun x => x x)` → "still
+  stepping after 1000 steps". Non-termination is now met in chapter 1,
+  where chapters 5 and 13 later lean on it. Kept out: strategies as a
+  topic, Church numerals, fixed points. Chapter 5's phrase for the
+  partial reduction is not used (its term is owned there; the gate
+  would have said so) — described as "until the outermost node is
+  settled" with the pointer forward.
+- `redex` and `normal form` registered in `book/terms.json` at chapter
+  1; the card regenerated. Gates: 15 chapters, 37 rules, 45 terms, all
+  green. Chapter 1 prose: 176 of 250 lines. tsc, lint, 41 tests green.

@@ -34,6 +34,8 @@ explained properly where it first appears.
 | **free variable** | free variable | A variable occurrence bound by nothing in the term. In the checker, a serial-numbered stand-in used while working under a binder; its type lives in a side table. | [1](ch01.md) |
 | **alpha-equivalence** | alpha-equivalence | Sameness up to renaming bound variables. With indices instead of names it costs nothing: equal terms are equal trees. | [1](ch01.md) |
 | **capture** | capture | A substituted term walks under a binder that uses one of its free names, and that name changes owner. The term changes meaning and nothing crashes. | [1](ch01.md) |
+| **redex** | redex | A reducible expression: a call whose function is a lambda, the one place beta can fire. | [1](ch01.md) |
+| **normal form** | normal form | A term with no redex anywhere in it. Running a program means stepping until it reaches one; some never do. | [1](ch01.md) |
 | **beta** | beta | Apply a function: substitute the argument into the body. | [1](ch01.md) |
 | **derivation** | derivation | A tree of judgments, each the conclusion of a rule whose premises sit above it. The checker's recursion is one of these written as a call stack. | [3](ch03.md) |
 | **environment** | environment | The map from names to already-checked declarations. It only ever grows, and a name may enter it once. | [4](ch04.md) |

@@ -66,6 +66,36 @@ function beta(e: Expr): Expr {
   return e;
 }
 
+// One step anywhere in the term, leftmost-outermost first.
+// Returns null when there is no redex left: the term is in normal form.
+function step(e: Expr): Expr | null {
+  switch (e.kind) {
+    case "var":
+      return null;
+    case "lam": {
+      const body = step(e.body);
+      return body === null ? null : lam(e.binder, body);
+    }
+    case "app": {
+      if (e.fn.kind === "lam") return beta(e);
+      const fn = step(e.fn);
+      if (fn !== null) return app(fn, e.arg);
+      const arg = step(e.arg);
+      return arg === null ? null : app(e.fn, arg);
+    }
+  }
+}
+
+// Run: step until nothing steps. A cap, because some terms never stop.
+function normalize(e: Expr, cap = 1000): string {
+  for (let i = 0; i < cap; i++) {
+    const next = step(e);
+    if (next === null) return show(e);
+    e = next;
+  }
+  return `(still stepping after ${cap} steps)`;
+}
+
 // fun x => f x  — f is free, x is bound.
 const t1 = lam("x", app(v("f"), v("x")));
 console.log(`${show(t1)}   free: ${[...freeVars(t1)].join(", ")}`);
@@ -78,8 +108,16 @@ console.log(show(beta(app(lam("x", v("x")), v("y")))));
 const k = lam("x", lam("y", v("x")));
 console.log(show(beta(app(k, v("y")))));
 
+// Run a whole program: k a b, two steps, and the answer is a.
+console.log(normalize(app(app(k, v("a")), v("b"))));
+
+// A term that steps to itself forever. The cap is the only thing that
+// brings this line back.
+const w = lam("x", app(v("x"), v("x")));
+console.log(normalize(app(w, w)));
+
 // To break it: in subst, delete the `if (freeVars(a).has(e.binder))`
-// branch and rerun. The last line becomes (fun y => y) — the identity
+// branch and rerun. The third line becomes (fun y => y) — the identity
 // function. The y that was free walked under a `fun y` and was captured.
 // Nothing crashed. Chapter 2 deletes the names so the trap cannot exist.
 
