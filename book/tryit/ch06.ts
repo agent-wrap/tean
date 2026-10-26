@@ -228,7 +228,7 @@ try {
 // To break it: remove step 3 from defEq. h1 == h2 turns false — no false
 // proof is accepted, but real libraries stop checking, because dependent
 // types compare proofs inside types all the time. The rule is
-// load-bearing for completeness, not for soundness. Chapter 14 makes
+// needed for completeness, not for soundness. Chapter 14 makes
 // that distinction into a test you can run.
 // Then break it the other way: move step 3 above step 1, and every
 // comparison in the program — including `#0` against `#0` — pays for two

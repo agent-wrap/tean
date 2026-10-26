@@ -21,7 +21,7 @@ interface Pair {
   /**
    * tean refuses most forgeries twice over: once by the named rule, once
    * by the derive-and-compare net (it never trusts exported inductive
-   * metadata). To show that the NAMED rule is load-bearing, the weakened
+   * metadata). To show that the NAMED rule is needed, the weakened
    * run must also trust the export, as the historical attacks assumed.
    */
   alsoWeaken: WeakenableRule[];
@@ -35,7 +35,7 @@ const PAIRS: Pair[] = [
   { rule: "WF-THM-PROP", refusal: "typeMismatch", alsoWeaken: [] },
 ];
 
-describe("forgery gate: each rule is defined by what it refuses", () => {
+describe("forgery gate: each named rule refuses its forgery, and a kernel without it accepts the file", () => {
   for (const pair of PAIRS) {
     const artifact = `book/forgeries/${pair.rule}.ndjson`;
 

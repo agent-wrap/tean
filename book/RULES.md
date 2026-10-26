@@ -256,7 +256,7 @@ Iota fires a recursor on a constructor: pick the rule for that constructor, appl
 
 ### RED-K — K-like reduction
 
-K-like reduction is proof irrelevance fused with iota: replace the major premise by the unique constructor without looking at it. The defeq guard on the types is load-bearing.
+K-like reduction is proof irrelevance fused with iota: replace the major premise by the unique constructor without looking at it. Without the defeq guard on the types, it is unsound.
 
 > `For a subsingleton eliminator: rec C e p h ~> e_ctor b v, for ANY proof h, when the types agree`
 
