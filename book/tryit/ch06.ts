@@ -204,6 +204,21 @@ const T = cnst("T");
 const k = lam(T, lam(T, bvar(1)));
 console.log(`infer(fun : T => #0)          = ${show(infer(lam(T, bvar(0)), []))}`);
 console.log(`K c1 c2 == c1                 : ${defEq(app(app(k, cnst("c1")), cnst("c2")), cnst("c1"), [])}`);
+
+// Chapter 1's 1 + 2, typed over T. whnf alone stops at a lambda whose
+// body still holds redexes; defEq gets to 3 by going under the binders.
+const TT = pi(T, T); // T -> T
+const N = pi(TT, pi(T, T)); // (T -> T) -> T -> T, the numeral type
+const num = (n: number): Expr => {
+  let body = bvar(0);
+  for (let i = 0; i < n; i++) body = app(bvar(1), body);
+  return lam(TT, lam(T, body));
+};
+// plus = fun m n f x => m f (n f x); indices: m #3, n #2, f #1, x #0
+const plus = lam(N, lam(N, lam(TT, lam(T, app(app(bvar(3), bvar(1)), app(app(bvar(2), bvar(1)), bvar(0)))))));
+const sum = app(app(plus, num(1)), num(2));
+console.log(`whnf(plus 1 2) is 3?          : ${show(whnf(sum)) === show(num(3))}`);
+console.log(`plus 1 2 == 3                 : ${defEq(sum, num(3), [])}`);
 try {
   infer(lam(T, app(bvar(0), bvar(0))), []);
 } catch (err) {

@@ -111,6 +111,20 @@ console.log(show(beta(app(k, v("y")))));
 // Run a whole program: k a b, two steps, and the answer is a.
 console.log(normalize(app(app(k, v("a")), v("b"))));
 
+// Numbers, encoded: n is "apply f to x, n times". plus runs n, then m.
+const f = v("f");
+const x = v("x");
+const one = lam("f", lam("x", app(f, x)));
+const two = lam("f", lam("x", app(f, app(f, x))));
+const three = lam("f", lam("x", app(f, app(f, app(f, x)))));
+const plus = lam("m", lam("n", lam("f", lam("x", app(app(v("m"), f), app(app(v("n"), f), x))))));
+console.log(normalize(app(app(plus, one), two)));
+
+// false picks its second argument. Nothing stops it being added to 3,
+// and the answer is 3: to the calculus, false is just another term.
+const no = lam("x", lam("y", v("y")));
+console.log(normalize(app(app(plus, three), no)));
+
 // A term that steps to itself forever. The cap is the only thing that
 // brings this line back.
 const w = lam("x", app(v("x"), v("x")));
