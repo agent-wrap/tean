@@ -1,5 +1,5 @@
 /**
- * The book's CI gates (see book/README.md). Every check is mechanical and
+ * The book's CI gates (see docs/BOOK.md). Every check is mechanical and
  * every failure names its file. Run: bun run scripts/book-gates.ts
  *
  * Gates:

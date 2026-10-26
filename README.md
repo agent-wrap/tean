@@ -44,7 +44,7 @@ string that merely occurs somewhere in the file is not a citation, and
 the gate rejects a call site, a comment, or a longer identifier that
 happens to contain the name.
 
-**[book/README.md](book/README.md)** lists all the gates.
+**[docs/BOOK.md](docs/BOOK.md)** lists all the gates.
 **[book/RULES.md](book/RULES.md)** is the generated appendix: every rule
 in plain English, with pinned links to the thesis, the kernel source, and
 the code.

@@ -1,5 +1,5 @@
 [book]
-title = "How to build a Lean proof checker — and know that it is right"
+title = "How to build a Lean proof checker if you already are familiar with TypeScript"
 authors = ["tean"]
 language = "en"
 src = "book"
